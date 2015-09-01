@@ -1,3 +1,17 @@
+*.class
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+
 #                    _ooOoo_
 #                   o8888888o
 #                   88" . "88
@@ -24,7 +38,7 @@
 
 
 # Written by Jadyer<http://blog.csdn.net/jadyer>
-# Git对于.ignore配置文件是按行从上到下进行规则匹配的,换句话说上面的规则匹配优先级高
+# Git对于.ignore配置文件规则是优先级下面高于上面
 *.gitignore
 .settings
 .project
@@ -34,17 +48,3 @@
 target/
 bin/
 META-INF/
-
-
-*.class
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
-*.jar
-*.war
-*.ear
-
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
