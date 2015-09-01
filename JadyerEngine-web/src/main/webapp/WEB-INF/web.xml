@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5" 
+	xmlns="http://java.sun.com/xml/ns/javaee" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
+	http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+	<!-- Web容器加载顺序ServletContext==context==param==listener==filter==servlet -->
+	<!-- ContextLoaderListener与DispatcherServlet的区别 -->
+	<!-- 
+		1)若同时配置ContextLoaderListener和DispatcherServlet,则会导致applicationContext.xml被加载两次(假设二者配置文件都是applicationContext.xml)
+		  一般情况下是不会有什么问题的,但若applicationContext.xml中配置了Quartz定时任务,就会导致同一任务被同时执行两次(即便任务设置了concurrent属性为false)
+		  解决办法有两个,一个是不配置ContextLoaderListener只配置DispatcherServlet,另一个是单独定义applicationContext-quartz.xml并由ContextLoaderListener加载
+		2)二者在加载完applicationContext.xml文件后,都会将applicationContext储存起来,但二者是通过不同的key来储存applicationContext的
+		  网上有很多获取applicationContext的介绍,比如下面的
+		  2.1)获取ContextLoaderListener储存的applicationContext时,可以使用WebApplicationContextUtils.getWebApplicationContext(servletContext)或WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext)方法
+		  2.2)获取DispatcherServlet所储存的applicationContext时,我们可以使用WebApplicationContextUtils.getWebApplicationContext(servletContext)或RequestContextUtils.getWebApplicationContext(request)方法
+		  2.3)只用DispatcherServlet加载时,若程序中有地方使用WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext)来获取applicationContext
+		      此时就会抛出"java.lang.IllegalStateException: No WebApplicationContext found: no ContextLoaderListener registered?"的异常
+		  经过测试,只配置DispatcherServlet时,通过WebApplicationContextUtils.getWebApplicationContext(servletContext)或RequestContextUtils.getWebApplicationContext(request)都没有获取到applicationContext
+		  所以针对ContextLoaderListener或DispatcherServlet,或二者同时配置,都建议像本工程的com.jadyer.common.base.ApplicationContextHolder.java一样实现ApplicationContextAware接口,都能获取到applicationContext
+		3)ContextLoaderListener是在Web容器启动时启动的,默认会加载/WEB-INF/applicationContext.xml,并创建一个WebApplicationContext容器
+		  DispatcherServlet是在用户第一次访问应用时创建的,默认会加载/WEB-INF/<servlet-name>-servlet.xml,并创建一个WebApplicationContext容器
+	 -->
+	<!-- 
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath:applicationContext.xml</param-value>
+	</context-param>
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+	 -->
+
+	<!-- Log4j -->
+	<!-- 
+	<context-param>
+		<param-name>log4jConfigLocation</param-name>
+		<param-value>classpath:log4j-${appenv.active}.properties</param-value>
+	</context-param>
+	<context-param>
+		<param-name>log4jRefreshInterval</param-name>
+		<param-value>3000</param-value>
+	</context-param>
+	<listener>
+		<listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
+	</listener>
+	 -->
+
+
+	<!-- SpringMVC -->
+	<servlet>
+		<servlet-name>SpringMVC</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:applicationContext.xml</param-value>
+		</init-param>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>SpringMVC</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+	
+	
+    <!-- 解决乱码(forceEncoding默认为false,true表示response.setCharacterEncoding("UTF-8")) -->
+	<filter>
+		<filter-name>CharacterEncodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+		<init-param>
+			<param-name>forceEncoding</param-name>
+			<param-value>true</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>CharacterEncodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	
+	<!-- 权限控制 -->
+	<filter>
+		<filter-name>AuthenticationFilter</filter-name>
+		<filter-class>com.jadyer.engine.common.base.AuthenticationFilter</filter-class>
+		<init-param>
+			<param-name>url</param-name>
+			<param-value>/login.jsp</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>AuthenticationFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	
+	<!-- druid(http://127.0.0.1/myapp/druid/index.html) -->
+	<filter>
+		<filter-name>DruidWebStatFilter</filter-name>
+		<filter-class>com.alibaba.druid.support.http.WebStatFilter</filter-class>
+		<init-param>
+			<param-name>exclusions</param-name>
+			<param-value>*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*</param-value>
+		</init-param>
+		<init-param>
+			<param-name>profileEnable</param-name>
+			<param-value>true</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>DruidWebStatFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	<servlet>
+		<servlet-name>DruidStatView</servlet-name>
+		<servlet-class>com.alibaba.druid.support.http.StatViewServlet</servlet-class>
+		<init-param>
+			<param-name>loginUsername</param-name>
+			<param-value>druid</param-value>
+		</init-param>
+		<init-param>
+			<param-name>loginPassword</param-name>
+			<param-value>druid</param-value>
+		</init-param>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>DruidStatView</servlet-name>
+		<url-pattern>/druid/*</url-pattern>
+	</servlet-mapping>
+	
+	
+	<!-- 
+	<filter>
+		<filter-name>openEntityManagerInViewFilter</filter-name>
+		<filter-class>org.springframework.orm.jpa.support.OpenEntityManagerInViewFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>openEntityManagerInViewFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	 -->
+	
+	
+	<!-- Session超时30分钟(零或负数表示会话永不超时) -->
+	<session-config>
+		<session-timeout>30</session-timeout>
+	</session-config>
+	
+	
+	<!-- 错误页 -->
+	<!-- 
+	<error-page>
+		<error-code>404</error-code>
+		<location>/404.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>500</error-code>
+		<location>/500.jsp</location>
+	</error-page>
+	<error-page>
+		<exception-type>java.lang.Throwable</exception-type>
+		<location>/500.jsp</location>
+	</error-page>
+	 -->
+</web-app>

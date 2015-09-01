@@ -1,0 +1,1 @@
+JAVA_OPTS="$JAVA_OPTS -Dappenv.active=dev"
