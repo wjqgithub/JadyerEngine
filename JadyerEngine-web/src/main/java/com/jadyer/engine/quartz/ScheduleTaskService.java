@@ -9,6 +9,7 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 
+import org.quartz.CronExpression;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.Job;
@@ -97,9 +98,7 @@ public class ScheduleTaskService {
 	 * 新增任务到数据库
 	 */
 	public ScheduleTask saveTask(ScheduleTask task){
-		try{
-			CronScheduleBuilder.cronSchedule(task.getCron());
-		}catch(Exception e){
+		if(!CronExpression.isValidExpression(task.getCron())){
 			throw new IllegalArgumentException("CronExpression不正确");
 		}
 		return scheduleTaskDao.save(task);
@@ -147,12 +146,10 @@ public class ScheduleTaskService {
 	 * 更新CronExpression
 	 */
 	public boolean updateCron(int taskId, String cron){
-		ScheduleTask task = this.getTaskById(taskId);
-		try{
-			CronScheduleBuilder.cronSchedule(cron);
-		}catch(Exception e){
+		if(!CronExpression.isValidExpression(cron)){
 			throw new IllegalArgumentException("CronExpression不正确");
 		}
+		ScheduleTask task = this.getTaskById(taskId);
 		task.setCron(cron);
 		if(ScheduleTask.STATUS_RUNNING.equals(task.getStatus())){
 			this.updateJobCron(task);

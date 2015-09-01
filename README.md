@@ -8,11 +8,11 @@
 6.记录但未解决AuthenticationFilter针对超时后处理Ajax请求发生异常的现象<br/>
 
 [v1.0.3] 2015.08.25<br/>
-1.数据库访问层移除iBatis-2.3.4.726,全面升级为Hibernate-EntityManager-4.3.11.Final实现的Spring-Data-JPA-1.8.2.RELEASE<br/>
+1.数据库访问层移除iBatis-2.3.4.726，全面升级为Hibernate实现的Spring-Data-JPA<br/>
 
 [v1.0.2] 2015.08.15<br/>
 1.增加用于处理图像的ImageUtil-v1.0<br/>
 
 [v1.0.1] 2015.08.13<br/>
-1.从该版本起记录升级历史,以前版本默认为v1.0.0<br/>
+1.从该版本起记录升级历史，以前版本默认为v1.0.0<br/>
 2.增加可手工启动、停止、挂起、恢复、更新Cron、删除定时任务的管理模块
