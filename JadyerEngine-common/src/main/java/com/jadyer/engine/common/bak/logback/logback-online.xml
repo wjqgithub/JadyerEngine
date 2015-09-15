@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!-- 日志组件启动时,以60秒周期监控此文件变化,并打印logback内部日志信息以打到实时查看logback运行状态的目的 -->
+<configuration scan="true" scanPeriod="60 seconds" debug="true">
+	<!-- 项目名称及日志目录定义 -->
+	<property name="PROJECT_NAME" value="filesystem"/>
+	<property name="LOG_APP_HOME" value="/home/finance/Logs/${PROJECT_NAME}.msfinance.lo/applog"/>
+	<property name="LOG_BUSINESS_HOME" value="/home/finance/Logs/${PROJECT_NAME}.msfinance.lo/businesslog"/>
+
+	<!-- 每个logger都关联到logger上下文,默认上下文名称为"default" -->
+	<!-- 可以使用<contextName>设置成其他名字,用于区分不同应用程序的记录 -->
+	<!-- 一旦设置,不能修改 -->
+	<contextName>${PROJECT_NAME}</contextName>
+
+	<!-- 记录所有日志到文件${PROJECT_NAME}-all.log(按日期和大小区分的滚动日志) -->
+	<appender name="FILE_ALL_BUSINESS" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_BUSINESS_HOME}/${PROJECT_NAME}-all.log</file>
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%15.15thread] %logger{36} - %msg%n</pattern>
+		</encoder>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_BUSINESS_HOME}/${PROJECT_NAME}-all.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>1024MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+	</appender>
+
+	<!-- 记录所有日志到文件${PROJECT_NAME}-all.log -->
+	<appender name="FILE_ALL_APP" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_APP_HOME}/${PROJECT_NAME}-all.log</file>
+		<encoder>
+			<pattern>[%d{yyyyMMdd HH:mm:ss}][%t][%C{1}.%M]%m%n</pattern>
+		</encoder>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_APP_HOME}/${PROJECT_NAME}-all.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>1024MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+	</appender>
+
+	<!-- 记录错误日志到单独文件${PROJECT_NAME}-error.log -->
+	<appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_APP_HOME}/${PROJECT_NAME}-error.log</file>
+		<encoder>
+			<pattern>[%d{yyyyMMdd HH:mm:ss}][%t][%C{1}.%M]%m%n</pattern>
+		</encoder>
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>ERROR</level>
+		</filter>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_APP_HOME}/${PROJECT_NAME}-error.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>1024MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+	</appender>
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>[%d{yyyyMMdd HH:mm:ss}][%t][%C{1}.%M]%m%n</pattern>
+		</encoder>
+	</appender>
+	
+	<logger name="com.msfinance.business" level="INFO" additivity="false">
+		<appender-ref ref="FILE_ALL_BUSINESS"/>
+	</logger>
+	<logger name="com.msfinance.app" level="DEBUG" additivity="true">
+		<appender-ref ref="FILE_ALL_APP"/>
+	</logger>
+	<logger name="com.msfinance.err" level="ERROR" additivity="true">
+		<appender-ref ref="FILE_ERROR"/>
+	</logger>
+	
+	<!-- 配置一些第三方包的日志过滤级别,用于避免刷屏 -->
+	<logger name="org.springframework" level="WARN"/>
+	<logger name="org.apache" level="WARN"/>
+	<logger name="java.sql" level="DEBUG"/>
+	
+	<root level="DEBUG">
+		<appender-ref ref="STDOUT"/>
+	</root>
+</configuration>
