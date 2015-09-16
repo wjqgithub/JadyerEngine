@@ -190,7 +190,7 @@ public class JadyerTest {
 		String fileBodyName = "fileData";
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("serialNo", UUID.randomUUID().toString().replaceAll("-", ""));
-		String respData = HttpUtil.sendPostRequestWithUpload(reqURL, filename, is, fileBodyName, params, "UTF-8");
+		String respData = HttpUtil.postWithUpload(reqURL, filename, is, fileBodyName, params);
 		System.out.println("文件上传完毕,收到应答报文" + respData);
 	}
 	
@@ -204,10 +204,9 @@ public class JadyerTest {
 	@Test
 	public void fileDownloadTest() throws IOException{
 		String reqURL = "http://127.0.0.1:8080/engine/file/download";
-		String filePath = System.getProperty("java.io.tmpdir");
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("sysCode", "33");
-		Map<String, Object> resultMap = HttpUtil.sendPostRequestWithDownload(reqURL, filePath, params, "UTF-8");
+		Map<String, Object> resultMap = HttpUtil.postWithDownload(reqURL, params);
 		if("yes".equals(resultMap.get("isSuccess"))){
 			System.out.println("文件下载成功,保存路径为" + resultMap.get("fullPath"));
 		}else{

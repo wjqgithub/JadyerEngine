@@ -57,37 +57,23 @@ import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
+import com.jadyer.engine.common.constant.CodeEnum;
+import com.jadyer.engine.common.exception.EngineException;
+
 /**
  * 封装了发送HTTP请求的工具类
- * @see 下一步准备加入全局常量UTF-8和超时时间以及对应的setter方法并返回this
- * @see 另外就是通信失败时直接跑RuntimeException或其他返回值的问题
- * @see 
- * @see 
- * @see 
- * @see 
- * @see 
- * @see 
- * @see 
- * @see 
- * @see 
- * @see 
- * @see 
- * @see 
- * @see 
- * @see 
- * @see 
- * @see 
+ * @see -----------------------------------------------------------------------------------------------------------
  * @see 本工具类中的部分方法用到了HttpComponents-Client-4.2.1
  * @see -----------------------------------------------------------------------------------------------------------
- * @see 开发HTTPS应用时，时常会遇到两种情况
- * @see 1、测试服务器没有有效的SSL证书,客户端连接时就会抛异常
- * @see    javax.net.ssl.SSLPeerUnverifiedException: peer not authenticated
- * @see 2、测试服务器有SSL证书,但可能由于各种不知名的原因,它还是会抛一堆烂码七糟的异常,诸如下面这两种
- * @see    javax.net.ssl.SSLException: hostname in certificate didn't match: <123.125.97.66> != <123.125.97.241>
- * @see    javax.net.ssl.SSLHandshakeException: sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+ * @see 开发HTTPS应用的过程中,时常会遇到下面两种情况
+ * @see 1.测试服务器没有有效的HTTPS证书,客户端连接时就会抛异常
+ * @see   javax.net.ssl.SSLPeerUnverifiedException: peer not authenticated
+ * @see 2.测试服务器有HTTPS证书,但可能由于各种不知名的原因,它还是会抛一堆烂码七糟的异常,诸如下面这两种
+ * @see   javax.net.ssl.SSLException: hostname in certificate didn't match: <123.125.97.66> != <123.125.97.241>
+ * @see   javax.net.ssl.SSLHandshakeException: sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
  * @see -----------------------------------------------------------------------------------------------------------
- * @see 再使用HttpComponents-Client-4.2.1创建连接时,针对SSL请求就要告诉它使用一个不同的TrustManager
- * @see 由于SSL使用的模式是X.509,对于该模式,Java有一个特定的TrustManager,称为X509TrustManager
+ * @see 在使用HttpComponents-Client-4.2.1创建连接时,针对HTTPS请求就要告诉它使用一个不同的TrustManager
+ * @see 由于HTTPS使用的模式是X.509,对于该模式,Java有一个特定的TrustManager,称为X509TrustManager
  * @see TrustManager是一个用于检查给定的证书是否有效的类,所以我们自己创建一个X509TrustManager实例
  * @see 而在X509TrustManager实例中,若证书无效,那么TrustManager在它的checkXXX()方法中将抛出CertificateException
  * @see 既然我们要接受所有的证书,那么X509TrustManager里面的方法体中不抛出异常就行了
@@ -130,7 +116,8 @@ import org.apache.http.util.EntityUtils;
  * @see    http://qzone-music.qq.com/fcg-bin/fcg_music_fav_getinfo.fcg?dirinfo=0&dirid=1&uin=QQ号&p=0.519638272547262&g_tk=1284234856
  * @see    http://v5.pc.duomi.com/search-ajaxsearch-searchall?kw=关键字&pi=页码&pz=每页音乐数
  * @see -----------------------------------------------------------------------------------------------------------
- * @version v2.3
+ * @version v2.4
+ * @history v2.4-->重命名GET和POST方法名,全局定义通信报文编码和连接读取超时时间,通信发生异常时修改为直接抛出RuntimeException
  * @history v2.3-->增加<code>sendPostRequestWithUpload()</code><code>sendPostRequestWithDownload()</code>方法,用于上传和下载文件
  * @history v2.2-->增加<code>sendPostRequestBySocket()</code>方法,用于处理请求参数非字符串而是Map的情景
  * @history v2.1-->增加<code>sendTCPRequest()</code>方法,用于发送TCP请求
@@ -143,32 +130,35 @@ import org.apache.http.util.EntityUtils;
  * @history v1.2-->新增<code>sendPostRequest()</code>方法,用于发送HTTP协议报文体为任意字符串的POST请求
  * @history v1.1-->新增<code>sendPostSSLRequest()</code>方法,用于发送HTTPS的POST请求
  * @history v1.0-->新建<code>sendGetRequest()</code>和<code>sendPostRequest()</code>方法
- * @update 2015-6-5 下午1:22:42
+ * @update Sep 16, 2015 3:59:14 PM
  * @create Feb 1, 2012 3:02:27 PM
  * @author 玄玉<http://blog.csdn.net/jadyer>
  */
 public final class HttpUtil {
+	private static final String DEFAULT_CHARSET = "UTF-8";          //设置默认通信报文编码为UTF-8
+	private static final int DEFAULT_CONNECTION_TIMEOUT = 1000 * 2; //设置默认连接超时为2s
+	private static final int DEFAULT_SO_TIMEOUT = 1000 * 60;        //设置默认读取超时为60s
 	private HttpUtil(){}
-	
+
 	/**
 	 * 发送HTTP_GET请求
 	 * @see 1)该方法会自动关闭连接,释放资源
-	 * @see 2)方法内设置了连接和读取超时时间,单位为毫秒,超时或发生其它异常时方法会自动返回"通信失败"字符串
+	 * @see 2)方法内设置了连接和读取超时(时间由本工具类全局变量限定),超时或发生其它异常将抛出RuntimeException
 	 * @see 3)请求参数含中文时,经测试可直接传入中文,HttpClient会自动编码发给Server,应用时应根据实际效果决定传入前是否转码
 	 * @see 4)该方法会自动获取到响应消息头中[Content-Type:text/html; charset=GBK]的charset值作为响应报文的解码字符集
 	 * @see   若响应消息头中无Content-Type属性,则会使用HttpClient内部默认的ISO-8859-1作为响应报文的解码字符集
 	 * @param requestURL 请求地址(含参数)
 	 * @return 远程主机响应正文
 	 */
-	public static String sendGetRequest(String reqURL){
-		String respData = "通信失败";
+	public static String get(String reqURL){
+		String respData = null;
 		HttpClient httpClient = new DefaultHttpClient();
 		//设置代理服务器
 		//httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, new HttpHost("10.0.0.4", 8080));
-		//连接超时10s
-		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
-		//读取超时20s
-		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, 20000);
+		//连接超时2s
+		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
+		//读取超时60s
+		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, DEFAULT_SO_TIMEOUT);
 		HttpGet httpGet = new HttpGet(reqURL);
 		try{
 			HttpResponse response = httpClient.execute(httpGet);
@@ -190,102 +180,176 @@ public final class HttpUtil {
 			String respBodyMsg = respData;                               //HTTP应答报文体信息
 			System.out.println("HTTP应答完整报文=[" + respStatusLine + "\r\n" + respHeaderMsg + "\r\n\r\n" + respBodyMsg + "]");
 			System.out.println("-----------------------------------------------------------------------------");
-		} catch (ConnectTimeoutException cte){
+		}catch(ConnectTimeoutException cte){
 			//Should catch ConnectTimeoutException, and don`t catch org.apache.http.conn.HttpHostConnectException
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时连接超时,堆栈轨迹如下", cte);
-		} catch (SocketTimeoutException ste){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时读取超时,堆栈轨迹如下", ste);
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
+		}catch(SocketTimeoutException ste){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时读取超时", ste);
 		}catch(ClientProtocolException cpe){
 			//该异常通常是协议错误导致:比如构造HttpGet对象时传入协议不对(将'http'写成'htp')or响应内容不符合HTTP协议要求等
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时协议异常,堆栈轨迹如下", cpe);
+			throw new EngineException(CodeEnum.SYSTEM_ERROR.getCode(), "请求通信[" + reqURL + "]时协议异常", cpe);
 		}catch(ParseException pe){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时解析异常,堆栈轨迹如下", pe);
+			throw new EngineException(CodeEnum.SYSTEM_ERROR.getCode(), "请求通信[" + reqURL + "]时解析异常", pe);
 		}catch(IOException ioe){
 			//该异常通常是网络原因引起的,如HTTP服务器未启动等
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时网络异常,堆栈轨迹如下", ioe);
-		}catch (Exception e){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时偶遇异常,堆栈轨迹如下", e);
+			throw new EngineException(CodeEnum.SYSTEM_ERROR.getCode(), "请求通信[" + reqURL + "]时网络异常", ioe);
+		}catch(Exception e){
+			throw new EngineException(CodeEnum.SYSTEM_ERROR.getCode(), "请求通信[" + reqURL + "]时遇到异常", e);
 		}finally{
 			//关闭连接,释放资源
 			httpClient.getConnectionManager().shutdown();
 		}
 		return respData;
 	}
-	
-	
+
+
 	/**
 	 * 发送HTTP_POST请求
 	 * @see 1)该方法允许自定义任何格式和内容的HTTP请求报文体
 	 * @see 2)该方法会自动关闭连接,释放资源
-	 * @see 3)方法内设置了连接和读取超时时间,单位为毫秒,超时或发生其它异常时方法会自动返回"通信失败"字符串
-	 * @see 4)请求参数含中文等特殊字符时,可直接传入本方法,并指明其编码字符集encodeCharset参数,方法内部会自动对其转码
+	 * @see 3)方法内设置了连接和读取超时(时间由本工具类全局变量限定),超时或发生其它异常将抛出RuntimeException
+	 * @see 4)请求参数含中文等特殊字符时,可直接传入本方法,方法内部会使用本工具类设置的全局DEFAULT_CHARSET对其转码
 	 * @see 5)该方法在解码响应报文时所采用的编码,取自响应消息头中的[Content-Type:text/html; charset=GBK]的charset值
 	 * @see   若响应消息头中未指定Content-Type属性,则会使用HttpClient内部默认的ISO-8859-1
-	 * @param reqURL        请求地址
-	 * @param reqData       请求报文,无参数时传null即可,多个参数则应拼接为param11=value11&22=value22&33=value33的形式
-	 * @param encodeCharset 编码字符集,编码请求数据时用之,此参数为必填项(不能为""或null)
+	 * @param reqURL  请求地址
+	 * @param reqData 请求报文,无参数时传null即可,多个参数则应拼接为param11=value11&22=value22&33=value33的形式
 	 * @return 远程主机响应正文
 	 */
-	public static String sendPostRequest(String reqURL, String reqData, String encodeCharset){
-		String respData = "通信失败";
+	public static String post(String reqURL, String reqData){
+		String respData = null;
 		HttpClient httpClient = new DefaultHttpClient();
-		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
-		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, 20000);
+		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
+		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, DEFAULT_SO_TIMEOUT);
 		HttpPost httpPost = new HttpPost(reqURL);
 		//由于下面使用的是new StringEntity(....),所以默认发出去的请求报文头中CONTENT_TYPE值为text/plain; charset=ISO-8859-1
 		//这就有可能会导致服务端接收不到POST过去的参数,比如运行在Tomcat6.0.36中的Servlet,所以我们手工指定CONTENT_TYPE头消息
-		httpPost.setHeader(HTTP.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=" + encodeCharset);
+		httpPost.setHeader(HTTP.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=" + DEFAULT_CHARSET);
 		try{
-			httpPost.setEntity(new StringEntity(reqData==null?"":reqData, encodeCharset));
+			httpPost.setEntity(new StringEntity(null==reqData?"":reqData, DEFAULT_CHARSET));
 			HttpResponse response = httpClient.execute(httpPost);
 			HttpEntity entity = response.getEntity();
-			if (null != entity) {
+			if(null != entity){
 				respData = EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset());
 			}
-		} catch (ConnectTimeoutException cte){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时连接超时,堆栈轨迹如下", cte);
-		} catch (SocketTimeoutException ste){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时读取超时,堆栈轨迹如下", ste);
+		}catch(ConnectTimeoutException cte){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
+		}catch(SocketTimeoutException ste){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时读取超时", ste);
 		}catch(Exception e){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时偶遇异常,堆栈轨迹如下", e);
+			throw new EngineException(CodeEnum.SYSTEM_ERROR.getCode(), "请求通信[" + reqURL + "]时遇到异常", e);
 		}finally{
 			httpClient.getConnectionManager().shutdown();
 		}
 		return respData;
 	}
-	
-	
+
+
 	/**
-	 * 发送可上传文件的HTTP_POST请求
-	 * @see 1)该方法允许上传文件
+	 * 发送HTTPS_POST请求
+	 * @see 1)该方法亦可处理HTTP_POST请求
 	 * @see 2)该方法会自动关闭连接,释放资源
-	 * @see 3)方法内设置了连接和读取超时时间,单位为毫秒,超时或发生其它异常时方法会自动返回"通信失败"字符串
-	 * @see 4)请求参数含中文等特殊字符时,可直接传入本方法,并指明其编码字符集encodeCharset参数,方法内部会自动对其转码
-	 * @see 5)该方法在解码响应报文时所采用的编码,取自响应消息头中的[Content-Type:text/html; charset=GBK]的charset值
+	 * @see 3)方法内自动注册443作为HTTPS端口,即处理HTTPS请求时,默认请求对方443端口
+	 * @see 4)方法内设置了连接和读取超时(时间由本工具类全局变量限定),超时或发生其它异常将抛出RuntimeException
+	 * @see 5)请求参数含中文等特殊字符时,可直接传入本方法,方法内部会使用本工具类设置的全局DEFAULT_CHARSET对其转码
+	 * @see 6)该方法在解码响应报文时所采用的编码,取自响应消息头中的[Content-Type:text/html; charset=GBK]的charset值
 	 * @see   若响应消息头中未指定Content-Type属性,则会使用HttpClient内部默认的ISO-8859-1
-	 * @param reqURL        请求地址
-	 * @param filename      待上传的文件名
-	 * @param is            待上传的文件流
-	 * @param fileBodyName  远程主机接收文件域的名字,相当于前台表单中的文件域名称<input type="file" name="fileBodyName">
-	 * @param params        请求参数,无参数时传null即可
-	 * @param encodeCharset 编码字符集,编码请求数据时用之,其为null时则取HttpClient内部默认的US-ASCII编码请求参数
+	 * @param reqURL 请求地址
+	 * @param params 请求参数,无参数时传null即可
 	 * @return 远程主机响应正文
 	 */
-	public static String sendPostRequestWithUpload(String reqURL, String filename, InputStream is, String fileBodyName, Map<String, String> params, String encodeCharset){
-		String respData = "通信失败";
+	public static String postTLS(String reqURL, Map<String, String> params){
+		String respData = null;
 		HttpClient httpClient = new DefaultHttpClient();
-		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
-		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, 20000);
+		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
+		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, DEFAULT_SO_TIMEOUT);
+		//创建TrustManager(),用于解决javax.net.ssl.SSLPeerUnverifiedException: peer not authenticated
+		X509TrustManager trustManager = new X509TrustManager(){
+			@Override
+			public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
+			@Override
+			public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
+			@Override
+			public X509Certificate[] getAcceptedIssuers() {return null;}
+		};
+		//创建HostnameVerifier,用于解决javax.net.ssl.SSLException: hostname in certificate didn't match: <123.125.97.66> != <123.125.97.241>
+		X509HostnameVerifier hostnameVerifier = new X509HostnameVerifier(){
+			@Override
+			public void verify(String host, SSLSocket ssl) throws IOException {}
+			@Override
+			public void verify(String host, X509Certificate cert) throws SSLException {}
+			@Override
+			public void verify(String host, String[] cns, String[] subjectAlts) throws SSLException {}
+			@Override
+			public boolean verify(String arg0, SSLSession arg1) {return true;}
+		};
+		try {
+			//TLS1.0是SSL3.0的升级版(网上已有人发现SSL3.0的致命BUG了),它们使用的是相同的SSLContext
+			SSLContext sslContext = SSLContext.getInstance(SSLSocketFactory.TLS);
+			//使用TrustManager来初始化该上下文,TrustManager只是被SSL的Socket所使用
+			sslContext.init(null, new TrustManager[]{trustManager}, null);
+			//创建SSLSocketFactory
+			SSLSocketFactory socketFactory = new SSLSocketFactory(sslContext, hostnameVerifier);
+			//通过SchemeRegistry将SSLSocketFactory注册到HttpClient上
+			httpClient.getConnectionManager().getSchemeRegistry().register(new Scheme("https", 443, socketFactory));
+			HttpPost httpPost = new HttpPost(reqURL);
+			//由于下面使用的是new UrlEncodedFormEntity(....),所以这里不需要手工指定CONTENT_TYPE为application/x-www-form-urlencoded
+			//因为在查看了HttpClient的源码后发现,UrlEncodedFormEntity所采用的默认CONTENT_TYPE就是application/x-www-form-urlencoded
+			//httpPost.setHeader(HTTP.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=" + encodeCharset);
+			if(null != params){
+				List<NameValuePair> formParams = new ArrayList<NameValuePair>();
+				for(Map.Entry<String,String> entry : params.entrySet()){
+					formParams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+				}
+				httpPost.setEntity(new UrlEncodedFormEntity(formParams, DEFAULT_CHARSET));
+			}
+			HttpResponse response = httpClient.execute(httpPost);
+			HttpEntity entity = response.getEntity();
+			if(null != entity){
+				respData = EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset());
+			}
+		}catch(ConnectTimeoutException cte){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
+		}catch(SocketTimeoutException ste){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时读取超时", ste);
+		}catch(Exception e){
+			throw new EngineException(CodeEnum.SYSTEM_ERROR.getCode(), "请求通信[" + reqURL + "]时遇到异常", e);
+		}finally{
+			httpClient.getConnectionManager().shutdown();
+		}
+		return respData;
+	}
+
+
+	/**
+	 * 发送上传文件的HTTP_POST请求
+	 * @see 1)该方法用来上传文件
+	 * @see 2)该方法会自动关闭连接,释放资源
+	 * @see 3)方法内设置了连接和读取超时(时间由本工具类全局变量限定),超时或发生其它异常将抛出RuntimeException
+	 * @see 4)请求参数含中文等特殊字符时,可直接传入本方法,方法内部会使用本工具类设置的全局DEFAULT_CHARSET对其转码
+	 * @see 5)该方法在解码响应报文时所采用的编码,取自响应消息头中的[Content-Type:text/html; charset=GBK]的charset值
+	 * @see   若响应消息头中未指定Content-Type属性,则会使用HttpClient内部默认的ISO-8859-1
+	 * @param reqURL       请求地址
+	 * @param filename     待上传的文件名
+	 * @param is           待上传的文件流
+	 * @param fileBodyName 远程主机接收文件域的名字,相当于前台表单中的文件域名称<input type="file" name="fileBodyName">
+	 * @param params       请求参数,无参数时传null即可
+	 * @return 远程主机响应正文
+	 */
+	public static String postWithUpload(String reqURL, String filename, InputStream is, String fileBodyName, Map<String, String> params){
+		String respData = null;
+		HttpClient httpClient = new DefaultHttpClient();
+		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
+		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, DEFAULT_SO_TIMEOUT);
 		HttpPost httpPost = new HttpPost(reqURL);
 		//Charset用来保证文件域中文名不乱码,非文件域中文不乱码的话还要像下面StringBody中再设置一次Charset
-		MultipartEntity reqEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, null, Charset.forName(encodeCharset));
+		MultipartEntity reqEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, null, Charset.forName(DEFAULT_CHARSET));
 		File tmpFile = new File(filename);
 		try{
 			FileUtils.copyInputStreamToFile(is, tmpFile);
 			reqEntity.addPart(fileBodyName, new FileBody(tmpFile));
 			if(null != params){
 				for(Map.Entry<String,String> entry : params.entrySet()){
-					reqEntity.addPart(entry.getKey(), new StringBody(entry.getValue(), Charset.forName(encodeCharset)));
+					reqEntity.addPart(entry.getKey(), new StringBody(entry.getValue(), Charset.forName(DEFAULT_CHARSET)));
 				}
 				httpPost.setEntity(reqEntity);
 			}
@@ -294,41 +358,40 @@ public final class HttpUtil {
 			if(null != entity){
 				respData = EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset());
 			}
-		} catch (ConnectTimeoutException cte){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时连接超时,堆栈轨迹如下", cte);
-		} catch (SocketTimeoutException ste){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时读取超时,堆栈轨迹如下", ste);
+		}catch(ConnectTimeoutException cte){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
+		}catch(SocketTimeoutException ste){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时读取超时", ste);
 		}catch(Exception e){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时偶遇异常,堆栈轨迹如下", e);
+			throw new EngineException(CodeEnum.SYSTEM_ERROR.getCode(), "请求通信[" + reqURL + "]时遇到异常", e);
 		}finally{
 			httpClient.getConnectionManager().shutdown();
 			tmpFile.delete();
 		}
 		return respData;
 	}
-	
-	
+
+
 	/**
 	 * 发送下载文件的HTTP_POST请求
-	 * @see 1)该方法主要用来下载文件
+	 * @see 1)该方法用来下载文件
 	 * @see 2)该方法会自动关闭连接,释放资源
-	 * @see 3)方法内设置了连接和读取超时时间,单位为毫秒,超时或发生其它异常时方法会自动返回"通信失败"字符串
-	 * @see 4)请求参数含中文等特殊字符时,可直接传入本方法,并指明其编码字符集encodeCharset参数,方法内部会自动对其转码
+	 * @see 3)方法内设置了连接和读取超时(时间由本工具类全局变量限定),超时或发生其它异常将抛出RuntimeException
+	 * @see 4)请求参数含中文等特殊字符时,可直接传入本方法,方法内部会使用本工具类设置的全局DEFAULT_CHARSET对其转码
 	 * @see 5)该方法在解码响应报文时所采用的编码,取自响应消息头中的[Content-Type:text/html; charset=GBK]的charset值
 	 * @see   若响应消息头中未指定Content-Type属性,则会使用HttpClient内部默认的ISO-8859-1
-	 * @see 6)如果下载的文件比较大,导致程序假死,可考虑在本方法内部输出流到文件或返回给浏览器
-	 * @param reqURL        请求地址
-	 * @param filePath      不含文件名的文件保存地址
-	 * @param params        请求参数,无参数时传null即可
-	 * @param encodeCharset 编码字符集,编码请求数据时用之,其为null时则取HttpClient内部默认的US-ASCII编码请求参数
-	 * @return 应答Map有两个key,isSuccess--yes or no,fullPath--isSuccess为yes时返回文件完整保存路径,failReason--isSuccess为no时返回表示下载失败的原因
+	 * @see 6)下载的文件会保存在ava.io.tmpdir环境变量指定的目录中,CentOS6.5下是/tmp,Win7下是C:\Users\Jadyer\AppData\Local\Temp\
+	 * @see 7)下载的文件若比较大,可能导致程序假死或内存溢出,此时可考虑在本方法内部直接输出流
+	 * @param reqURL 请求地址
+	 * @param params 请求参数,无参数时传null即可
+	 * @return 应答Map有两个key,isSuccess--yes or no,fullPath--isSuccess为yes时返回文件完整保存路径,failReason--isSuccess为no时返回下载失败的原因
 	 */
-	public static Map<String, Object> sendPostRequestWithDownload(String reqURL, String filePath, Map<String, String> params, String encodeCharset){
+	public static Map<String, Object> postWithDownload(String reqURL, Map<String, String> params){
 		HttpEntity entity = null;
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		HttpClient httpClient = new DefaultHttpClient();
-		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
-		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, 20000);
+		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
+		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, DEFAULT_SO_TIMEOUT);
 		HttpPost httpPost = new HttpPost(reqURL);
 		try{
 			//由于下面使用的是new UrlEncodedFormEntity(....),所以这里不需要手工指定CONTENT_TYPE为application/x-www-form-urlencoded
@@ -339,7 +402,7 @@ public final class HttpUtil {
 				for(Map.Entry<String,String> entry : params.entrySet()){
 					formParams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
 				}
-				httpPost.setEntity(new UrlEncodedFormEntity(formParams, encodeCharset));
+				httpPost.setEntity(new UrlEncodedFormEntity(formParams, DEFAULT_CHARSET));
 			}
 			HttpResponse response = httpClient.execute(httpPost);
 			entity = response.getEntity();
@@ -369,7 +432,7 @@ public final class HttpUtil {
 				if(StringUtils.isBlank(filename)){
 					filename = UUID.randomUUID().toString().replaceAll("-", "");
 				}
-				File _file = new File(filePath+filename);
+				File _file = new File(System.getProperty("java.io.tmpdir") + filename);
 				FileUtils.copyInputStreamToFile(entity.getContent(), _file);
 				resultMap.put("isSuccess", "yes");
 				resultMap.put("fullPath", _file.getCanonicalPath());
@@ -378,135 +441,57 @@ public final class HttpUtil {
 				resultMap.put("isSuccess", "no");
 				resultMap.put("failReason", EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset()));
 			}
-		} catch (ConnectTimeoutException cte){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时连接超时,堆栈轨迹如下", cte);
-		} catch (SocketTimeoutException ste){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时读取超时,堆栈轨迹如下", ste);
+		}catch(ConnectTimeoutException cte){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
+		}catch(SocketTimeoutException ste){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时读取超时", ste);
 		}catch(Exception e){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时偶遇异常,堆栈轨迹如下", e);
+			throw new EngineException(CodeEnum.SYSTEM_ERROR.getCode(), "请求通信[" + reqURL + "]时遇到异常", e);
 		}finally{
-			try {
+			try{
 				EntityUtils.consume(entity);
-			} catch (IOException e) {
+			}catch(IOException e){
 				LogUtil.getLogger().error("请求通信[" + reqURL + "]时关闭远程应答文件流时发生异常,堆栈轨迹如下", e);
 			}
 			httpClient.getConnectionManager().shutdown();
 		}
 		return resultMap;
 	}
-	
-	
-	/**
-	 * 发送HTTP_POST_SSL请求
-	 * @see 1)该方法会自动关闭连接,释放资源
-	 * @see 2)该方法亦可处理普通的HTTP_POST请求
-	 * @see 3)当处理HTTP_POST_SSL请求时,默认请求的是对方443端口,除非reqURL参数中指明了SSL端口
-	 * @see 4)方法内设置了连接和读取超时时间,单位为毫秒,超时或发生其它异常时方法会自动返回"通信失败"字符串
-	 * @see 5)请求参数含中文等特殊字符时,可直接传入本方法,并指明其编码字符集encodeCharset参数,方法内部会自动对其转码
-	 * @see 6)方法内部会自动注册443作为SSL端口,若实际使用中reqURL指定的SSL端口非443,可自行尝试更改方法内部注册的SSL端口
-	 * @see 7)该方法在解码响应报文时所采用的编码,取自响应消息头中的[Content-Type:text/html; charset=GBK]的charset值
-	 * @see   若响应消息头中未指定Content-Type属性,则会使用HttpClient内部默认的ISO-8859-1
-	 * @param reqURL        请求地址
-	 * @param params        请求参数,无参数时传null即可
-	 * @param encodeCharset 编码字符集,编码请求数据时用之,当其为null时,则取HttpClient内部默认的ISO-8859-1编码请求参数
-	 * @return 远程主机响应正文
-	 */
-	public static String sendPostSSLRequest(String reqURL, Map<String, String> params, String encodeCharset){
-		String respData = "通信失败";
-		HttpClient httpClient = new DefaultHttpClient();
-		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
-		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, 20000);
-		//创建TrustManager(),用于解决javax.net.ssl.SSLPeerUnverifiedException: peer not authenticated
-		X509TrustManager trustManager = new X509TrustManager(){
-			@Override
-			public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
-			@Override
-			public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
-			@Override
-			public X509Certificate[] getAcceptedIssuers() {return null;}
-		};
-		//创建HostnameVerifier,用于解决javax.net.ssl.SSLException: hostname in certificate didn't match: <123.125.97.66> != <123.125.97.241>
-		X509HostnameVerifier hostnameVerifier = new X509HostnameVerifier(){
-			@Override
-			public void verify(String host, SSLSocket ssl) throws IOException {}
-			@Override
-			public void verify(String host, X509Certificate cert) throws SSLException {}
-			@Override
-			public void verify(String host, String[] cns, String[] subjectAlts) throws SSLException {}
-			@Override
-			public boolean verify(String arg0, SSLSession arg1) {return true;}
-		};
-		try {
-			//TLS1.0与SSL3.0基本上没有太大的差别,可粗略理解为TLS是SSL的继承者，但它们使用的是相同的SSLContext
-			SSLContext sslContext = SSLContext.getInstance(SSLSocketFactory.TLS);
-			//使用TrustManager来初始化该上下文,TrustManager只是被SSL的Socket所使用
-			sslContext.init(null, new TrustManager[]{trustManager}, null);
-			//创建SSLSocketFactory
-			SSLSocketFactory socketFactory = new SSLSocketFactory(sslContext, hostnameVerifier);
-			//通过SchemeRegistry将SSLSocketFactory注册到HttpClient上
-			httpClient.getConnectionManager().getSchemeRegistry().register(new Scheme("https", 443, socketFactory));
-			HttpPost httpPost = new HttpPost(reqURL);
-			//由于下面使用的是new UrlEncodedFormEntity(....),所以这里不需要手工指定CONTENT_TYPE为application/x-www-form-urlencoded
-			//因为在查看了HttpClient的源码后发现,UrlEncodedFormEntity所采用的默认CONTENT_TYPE就是application/x-www-form-urlencoded
-			//httpPost.setHeader(HTTP.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=" + encodeCharset);
-			if(null != params){
-				List<NameValuePair> formParams = new ArrayList<NameValuePair>();
-				for(Map.Entry<String,String> entry : params.entrySet()){
-					formParams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
-				}
-				httpPost.setEntity(new UrlEncodedFormEntity(formParams, encodeCharset));
-			}
-			HttpResponse response = httpClient.execute(httpPost);
-			HttpEntity entity = response.getEntity();
-			if (null != entity) {
-				respData = EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset());
-			}
-		} catch (ConnectTimeoutException cte){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时连接超时,堆栈轨迹如下", cte);
-		} catch (SocketTimeoutException ste){
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时读取超时,堆栈轨迹如下", ste);
-		} catch (Exception e) {
-			LogUtil.getLogger().error("请求通信[" + reqURL + "]时偶遇异常,堆栈轨迹如下", e);
-		} finally {
-			httpClient.getConnectionManager().shutdown();
-		}
-		return respData;
-	}
-	
-	
+
+
 	/**
 	 * 发送HTTP_POST请求
 	 * @see 1)本方法是通过<code>java.net.HttpURLConnection</code>实现HTTP_POST请求的发送的
-	 * @see 2)本方法默认的连接超时和读取超时均为30秒
-	 * @see 3)请求参数含中文时,无需<code>URLEncoder.encode(value, reqCharset)</code>可直接传入,该方法内部会自动encode
-	 * @see 4)解码响应正文时,默认取响应头[Content-Type=text/html; charset=GBK]字符集,若无Content-Type,则使用UTF-8解码
+	 * @see 2)方法内设置了连接和读取超时(时间由本工具类全局变量限定)
+	 * @see 3)请求参数含中文等特殊字符时,可直接传入本方法,方法内部会使用本工具类设置的全局DEFAULT_CHARSET对其转码
+	 * @see 4)解码响应正文时,默认取响应头[Content-Type=text/html; charset=GBK]字符集
+	 * @see   若无Content-Type,则使用本工具类设置的全局DEFAULT_CHARSET解码
 	 * @see 5)本方法的美中不足是:服务器返回500时,它会直接抛出类似下面的异常
 	 * @see   java.io.IOException: Server returned HTTP response code: 500 for URL: http://xxxx/xxxx
-	 * @see   原因是:这里用到的是SUN提供的基于HTTP协议的框架实现
-	 * @param reqURL     请求地址
-	 * @param reqData    请求报文,多个参数则应拼接为param11=value11&22=value22&33=value33的形式
-	 * @param reqCharset 请求报文的编码字符集,注意该参数不可传入""或null
+	 * @see   原因是这里用到了SUN提供的基于HTTP协议的框架实现
+	 * @param reqURL  请求地址
+	 * @param reqData 请求报文,多个参数则应拼接为param11=value11&22=value22&33=value33的形式
 	 * @return 应答Map有两个key,respData--HTTP响应报文体,respFullData--HTTP响应完整报文
 	 */
-	public static Map<String, String> sendPostRequestByJava(String reqURL, String reqData, String reqCharset) {
+	public static Map<String, String> postByJava(String reqURL, String reqData) {
 		Map<String, String> respMap = new HashMap<String, String>();
 		HttpURLConnection httpURLConnection = null;
 		OutputStream out = null; //写
 		InputStream in = null;   //读
 		String respData = "";    //HTTP响应报文体
-		String respCharset = "UTF-8";
-		try {
+		String respCharset = DEFAULT_CHARSET;
+		try{
 			URL sendUrl = new URL(reqURL);
 			httpURLConnection = (HttpURLConnection)sendUrl.openConnection();
 			httpURLConnection.setDoInput(true);         //true表示允许获得输入流,读取服务器响应的数据,该属性默认值为true
 			httpURLConnection.setDoOutput(true);        //true表示允许获得输出流,向远程服务器发送数据,该属性默认值为false
 			httpURLConnection.setUseCaches(false);      //禁止缓存
-			httpURLConnection.setReadTimeout(30000);    //30秒读取超时
-			httpURLConnection.setConnectTimeout(30000); //30秒连接超时
+			httpURLConnection.setReadTimeout(DEFAULT_SO_TIMEOUT);            //读取超时
+			httpURLConnection.setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT); //连接超时
 			httpURLConnection.setRequestMethod("POST");
 			
 			out = httpURLConnection.getOutputStream();
-			out.write(URLEncoder.encode(reqData, reqCharset).getBytes());
+			out.write(URLEncoder.encode(reqData, DEFAULT_CHARSET).getBytes());
 			out.flush(); //发送数据
 			
 			/**
@@ -574,44 +559,43 @@ public final class HttpUtil {
 			respMap.put("respData", respData);
 			respMap.put("respFullData", respHeader.toString() + "\r\n" + respData);
 			return respMap;
-		} catch (Exception e) {
+		}catch(Exception e){
 			System.err.println("与[" + reqURL + "]通信异常,堆栈信息如下");
 			e.printStackTrace();
 			return respMap;
-		} finally {
-			if (out != null) {
-				try {
+		}finally{
+			if(null != out){
+				try{
 					out.close();
-				} catch (Exception e) {
+				}catch(Exception e){
 					System.err.println("关闭输出流时发生异常,堆栈信息如下");
 					e.printStackTrace();
 				}
 			}
-			if (in != null) {
-				try {
+			if(null != in){
+				try{
 					in.close();
-				} catch (Exception e) {
+				}catch(Exception e){
 					System.err.println("关闭输入流时发生异常,堆栈信息如下");
 					e.printStackTrace();
 				}
 			}
-			if (httpURLConnection != null) {
+			if(null != httpURLConnection){
 				httpURLConnection.disconnect();
 				httpURLConnection = null;
 			}
 		}
 	}
-	
-	
+
+
 	/**
 	 * 发送HTTP_POST请求
-	 * @see you can see {@link HttpUtil#sendPostRequestBySocket(String, String, String)}
+	 * @see you can see {@link HttpUtil#postBySocket(String, String)}
 	 * @param reqURL     请求地址
 	 * @param reqParams  请求报文
-	 * @param reqCharset 请求报文的编码字符集,注意该参数不可传入""或null
 	 * @return 应答Map有两个key,reqFullData--HTTP请求完整报文,respFullData--HTTP响应完整报文
 	 */
-	public static Map<String, String> sendPostRequestBySocket(String reqURL, Map<String, String> reqParams, String reqCharset){
+	public static Map<String, String> postBySocket(String reqURL, Map<String, String> reqParams){
 		StringBuilder reqData = new StringBuilder();
 		for(Map.Entry<String, String> entry : reqParams.entrySet()){
 			reqData.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
@@ -619,16 +603,17 @@ public final class HttpUtil {
 		if(reqData.length() > 0){
 			reqData.setLength(reqData.length() - 1); //删除最后一个&符号
 		}
-		return sendPostRequestBySocket(reqURL, reqData.toString(), reqCharset);
+		return postBySocket(reqURL, reqData.toString());
 	}
-	
-	
+
+
 	/**
 	 * 发送HTTP_POST请求
 	 * @see 1)本方法是通过<code>java.net.Socket.Socket</code>实现HTTP_POST请求的发送的
-	 * @see 2)本方法默认的连接超时和读取超时均为30秒
-	 * @see 3)请求参数含中文时,无需<code>URLEncoder.encode(value, reqCharset)</code>可直接传入,该方法内部会自动encode
-	 * @see 4)解码响应正文时,默认取响应头[Content-Type=text/html; charset=GBK]字符集,若无Content-Type,则使用UTF-8解码
+	 * @see 2)方法内设置了连接和读取超时(时间由本工具类全局变量限定)
+	 * @see 3)请求参数含中文等特殊字符时,可直接传入本方法,方法内部会使用本工具类设置的全局DEFAULT_CHARSET对其转码
+	 * @see 4)解码响应正文时,默认取响应头[Content-Type=text/html; charset=GBK]字符集
+	 * @see   若无Content-Type,则使用本工具类设置的全局DEFAULT_CHARSET解码
 	 * @see 5)该方法的请求和应答报文分别如下
 	 * @see   =============================================================================
 	 * @see   POST /tra/trade/noCardNoPassword.htm HTTP/1.1
@@ -671,23 +656,22 @@ public final class HttpUtil {
 	 * @see   payProAmt=
 	 * @see   payBankCode=
 	 * @see   bankAcountNo=
-	 * @see   bankAcountName=李治天
+	 * @see   bankAcountName=汪藏海
 	 * @see   remark=
 	 * @see   =============================================================================
-	 * @param reqURL     请求地址
-	 * @param reqData    请求报文,多个参数则应拼接为param11=value11&22=value22&33=value33的形式
-	 * @param reqCharset 请求报文的编码字符集,注意该参数不可传入""或null
+	 * @param reqURL  请求地址
+	 * @param reqData 请求报文,多个参数则应拼接为param11=value11&22=value22&33=value33的形式
 	 * @return 应答Map有两个key,reqFullData--HTTP请求完整报文,respFullData--HTTP响应完整报文
 	 */
-	public static Map<String, String> sendPostRequestBySocket(String reqURL, String reqData, String reqCharset){
+	public static Map<String, String> postBySocket(String reqURL, String reqData){
 		Map<String, String> respMap = new HashMap<String, String>();
 		OutputStream out = null; //写
 		InputStream in = null;   //读
 		Socket socket = null;    //客户机
-		String respCharset = "UTF-8";
+		String respCharset = DEFAULT_CHARSET;
 		String respFullData = "";
 		StringBuilder reqFullData = new StringBuilder();
-		try {
+		try{
 			URL sendURL = new URL(reqURL);
 			String host = sendURL.getHost();
 			int port = sendURL.getPort()==-1 ? 80 : sendURL.getPort();
@@ -717,7 +701,7 @@ public final class HttpUtil {
 			//表示接收数据时的等待超时时间,单位毫秒..其默认值为0,表示会无限等待,永远不会超时
 			//当通过Socket的输入流读数据时,如果还没有数据,就会等待
 			//超时后会抛出SocketTimeoutException,且抛出该异常后Socket仍然是连接的,可以尝试再次读数据
-			socket.setSoTimeout(30000);
+			socket.setSoTimeout(DEFAULT_SO_TIMEOUT);
 			//表示当执行Socket.close()时,是否立即关闭底层的Socket
 			//这里设置为当Socket关闭后,底层Socket延迟5秒后再关闭,而5秒后所有未发送完的剩余数据也会被丢弃
 			//默认情况下,执行Socket.close()方法,该方法会立即返回,但底层的Socket实际上并不立即关闭
@@ -759,13 +743,13 @@ public final class HttpUtil {
 			//若欲设定这个等待时间,就要像下面这样使用不带参数的Socket构造方法,单位是毫秒
 			//若超过下面设置的30秒等待建立连接的超时时间,则会抛出SocketTimeoutException
 			//注意:如果超时时间设为0,则表示永远不会超时
-			socket.connect(new InetSocketAddress(host, port), 30000);
+			socket.connect(new InetSocketAddress(host, port), DEFAULT_CONNECTION_TIMEOUT);
 			//获取本地绑定的端口(每一个请求都会在本地绑定一个端口,再通过该端口发出去,即/127.0.0.1:50804 => /127.0.0.1:9901)
 			//int localBindPort = socket.getLocalPort();
 			/**
 			 * 构造HTTP请求报文
 			 */
-			reqData = URLEncoder.encode(reqData, reqCharset);
+			reqData = URLEncoder.encode(reqData, DEFAULT_CHARSET);
 			reqFullData.append("POST ").append(sendURL.getPath()).append(" HTTP/1.1\r\n");
 			reqFullData.append("Cache-Control: no-cache\r\n");
 			reqFullData.append("Pragma: no-cache\r\n");
@@ -773,7 +757,7 @@ public final class HttpUtil {
 			reqFullData.append("Host: ").append(sendURL.getHost()).append("\r\n");
 			reqFullData.append("Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2\r\n");
 			reqFullData.append("Connection: keep-alive\r\n");
-			reqFullData.append("Content-Type: application/x-www-form-urlencoded; charset=").append(reqCharset).append("\r\n");
+			reqFullData.append("Content-Type: application/x-www-form-urlencoded; charset=").append(DEFAULT_CHARSET).append("\r\n");
 			reqFullData.append("Content-Length: ").append(reqData.getBytes().length).append("\r\n");
 			reqFullData.append("\r\n");
 			reqFullData.append(reqData);
@@ -832,18 +816,18 @@ public final class HttpUtil {
 			 * 解码HTTP响应的完整报文
 			 */
 			respFullData = bytesOut.toString(respCharset);
-		} catch (Exception e) {
+		}catch(Exception e){
 			System.err.println("与[" + reqURL + "]通信遇到异常,堆栈信息如下");
 			e.printStackTrace();
-		} finally {
-			if (null!=socket && socket.isConnected() && !socket.isClosed()) {
-				try {
+		}finally{
+			if(null!=socket && socket.isConnected() && !socket.isClosed()){
+				try{
 					//此时socket的输出流和输入流也都会被关闭
 					//值得注意的是:先后调用Socket的shutdownInput()和shutdownOutput()方法
 					//值得注意的是:仅仅关闭了输入流和输出流,并不等价于调用Socket.close()方法
 					//通信结束后,仍然要调用Socket.close()方法,因为只有该方法才会释放Socket占用的资源,如占用的本地端口等
 					socket.close();
-				} catch (IOException e) {
+				}catch(IOException e){
 					System.err.println("关闭客户机Socket时发生异常,堆栈信息如下");
 					e.printStackTrace();
 				}
@@ -853,20 +837,19 @@ public final class HttpUtil {
 		respMap.put("respFullData", respFullData);
 		return respMap;
 	}
-	
-	
+
+
 	/**
 	 * 发送TCP请求
-	 * @see 1)本方法默认的连接超时和读取超时均为30秒
-	 * @see 2)转码与解码请求响应字节时,均采用双方约定的字符集,即本方法的第四个参数reqCharset
-	 * @see 3)关于Socket属性的详细注释,you can see {@link HTTPUtil#sendPostRequestBySocket(String, String, String)}
-	 * @param IP         远程主机地址
-	 * @param port       远程主机端口
-	 * @param reqData    待发送报文的中文字符串形式
-	 * @param reqCharset 该方法与远程主机间通信报文的编码字符集(编码为byte[]发送到Server),注意该参数不可传入""或null
+	 * @see 1)方法内设置了连接和读取超时(时间由本工具类全局变量限定)
+	 * @see 2)转码(编码为byte[]发送到Server)与解码请求响应字节时,均采用本工具类设置的全局DEFAULT_CHARSET
+	 * @see 3)关于Socket属性的详细注释,you can see {@link HttpUtil#postBySocket(String, String)}
+	 * @param IP      远程主机地址
+	 * @param port    远程主机端口
+	 * @param reqData 待发送报文的中文字符串形式
 	 * @return 应答Map有两个key,localBindPort--本地绑定的端口,respData--应答报文
 	 */
-	public static Map<String, String> sendTCPRequest(String IP, int port, String reqData, String reqCharset){
+	public static Map<String, String> tcp(String ip, int port, String reqData){
 		Map<String, String> respMap = new HashMap<String, String>();
 		OutputStream out = null;      //写
 		InputStream in = null;        //读
@@ -876,16 +859,16 @@ public final class HttpUtil {
 		try {
 			socket.setTcpNoDelay(true);
 			socket.setReuseAddress(true);
-			socket.setSoTimeout(30000);
+			socket.setSoTimeout(DEFAULT_SO_TIMEOUT);
 			socket.setSoLinger(true, 5);
 			socket.setSendBufferSize(1024);
 			socket.setReceiveBufferSize(1024);
 			socket.setKeepAlive(true);
-			socket.connect(new InetSocketAddress(IP, port), 30000);
+			socket.connect(new InetSocketAddress(ip, port), DEFAULT_CONNECTION_TIMEOUT);
 			localBindPort = String.valueOf(socket.getLocalPort());
 			//发送TCP请求
 			out = socket.getOutputStream();
-			out.write(reqData.getBytes(reqCharset));
+			out.write(reqData.getBytes(DEFAULT_CHARSET));
 			//接收TCP响应
 			in = socket.getInputStream();
 			ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
@@ -895,7 +878,7 @@ public final class HttpUtil {
 				bytesOut.write(buffer, 0, len);
 			}
 			//解码TCP响应的完整报文
-			respData = bytesOut.toString(reqCharset);
+			respData = bytesOut.toString(DEFAULT_CHARSET);
 //			/**
 //			 * 校验响应报文是否已全部接收
 //			 * @see 此为可选
@@ -907,7 +890,7 @@ public final class HttpUtil {
 //				System.err.println("响应报文未完全接收or响应报文有误");
 //			}
 		} catch (Exception e) {
-			System.err.println("与[" + IP + ":" + port + "]通信遇到异常,堆栈信息如下");
+			System.err.println("与[" + ip + ":" + port + "]通信遇到异常,堆栈信息如下");
 			e.printStackTrace();
 		} finally {
 			if (null!=socket && socket.isConnected() && !socket.isClosed()) {

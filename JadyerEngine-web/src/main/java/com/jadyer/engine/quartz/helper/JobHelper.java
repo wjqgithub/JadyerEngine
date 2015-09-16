@@ -54,7 +54,7 @@ public class JobHelper {
 	 */
 	public static void invokMethod(ScheduleTask task){
 		LogUtil.getLogger().info("start-->定时任务" + task.getName() + "=[" + task.getUrl() + "]");
-		String respData = HttpUtil.sendPostSSLRequest(task.getUrl(), null, "UTF-8");
+		String respData = HttpUtil.postTLS(task.getUrl(), null);
 		LogUtil.getLogger().info("stopp-->定时任务" + task.getName() + "=[" + task.getUrl() + "],return=[" + respData + "]");
 	}
 }
