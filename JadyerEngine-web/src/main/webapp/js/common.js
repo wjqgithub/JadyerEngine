@@ -1,10 +1,10 @@
 /**
  * 判断是否为空
- * @see 空格也会被认为是空
+ * @see null对象和空格都会被认为是空
  * @return true--空,false--非空
  */
 function isEmpty(str){
-	return /^\s*$/.test(str);
+	return null==str || /^\s*$/.test(str);
 }
 
 

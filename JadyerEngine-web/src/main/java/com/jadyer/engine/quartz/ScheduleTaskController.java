@@ -1,8 +1,13 @@
 package com.jadyer.engine.quartz;
 
+import java.util.Date;
+
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,15 +57,21 @@ public class ScheduleTaskController {
 
 	@ResponseBody
 	@RequestMapping(value="/add")
-	public CommonResult add(ScheduleTask task){
+	public CommonResult add(ScheduleTask task, String dynamicPassword){
+		if(!this.verifyDynamicPassword(dynamicPassword)){
+			return new CommonResult(CodeEnum.SYSTEM_BUSY.getCode(), "动态密码不正确");
+		}
 		ScheduleTask obj = scheduleTaskService.saveTask(task);
 		return new CommonResult(CodeEnum.SUCCESS.getCode(), String.valueOf(obj.getId()));
 	}
 
 
 	@ResponseBody
-	@RequestMapping(value="/delete/{id}")
-	public CommonResult delete(@PathVariable int id){
+	@RequestMapping(value="/delete/{id}/{dynamicPassword}")
+	public CommonResult delete(@PathVariable int id, @PathVariable String dynamicPassword){
+		if(!this.verifyDynamicPassword(dynamicPassword)){
+			return new CommonResult(CodeEnum.SYSTEM_BUSY.getCode(), "动态密码不正确");
+		}
 		scheduleTaskService.deleteTask(id);
 		return new CommonResult();
 	}
@@ -68,7 +79,10 @@ public class ScheduleTaskController {
 
 	@ResponseBody
 	@RequestMapping(value="/updateStatus")
-	public CommonResult updateStatus(int id, String status){
+	public CommonResult updateStatus(int id, String status, String dynamicPassword){
+		if(!this.verifyDynamicPassword(dynamicPassword)){
+			return new CommonResult(CodeEnum.SYSTEM_BUSY.getCode(), "动态密码不正确");
+		}
 		if(scheduleTaskService.updateStatus(id, status)){
 			return new CommonResult();
 		}else{
@@ -79,7 +93,10 @@ public class ScheduleTaskController {
 
 	@ResponseBody
 	@RequestMapping(value="/updateCron")
-	public CommonResult updateCron(int id, String cron){
+	public CommonResult updateCron(int id, String cron, String dynamicPassword){
+		if(!this.verifyDynamicPassword(dynamicPassword)){
+			return new CommonResult(CodeEnum.SYSTEM_BUSY.getCode(), "动态密码不正确");
+		}
 		if(scheduleTaskService.updateCron(id, cron)){
 			return new CommonResult();
 		}else{
@@ -92,10 +109,25 @@ public class ScheduleTaskController {
 	 * 立即执行一个QuartzJOB
 	 */
 	@ResponseBody
-	@RequestMapping(value="/triggerJob/{id}")
-	public CommonResult triggerJob(@PathVariable int id){
+	@RequestMapping(value="/triggerJob/{id}/{dynamicPassword}")
+	public CommonResult triggerJob(@PathVariable int id, @PathVariable String dynamicPassword){
+		if(!this.verifyDynamicPassword(dynamicPassword)){
+			return new CommonResult(CodeEnum.SYSTEM_BUSY.getCode(), "动态密码不正确");
+		}
 		ScheduleTask task = scheduleTaskService.getTaskById(id);
 		scheduleTaskService.triggerJob(task);
 		return new CommonResult();
+	}
+
+
+	/**
+	 * 验证动态密码是否正确
+	 * @see 每个动态密码有效期为10分钟
+	 * @return 动态密码正确则返回true,反之false
+	 */
+	private boolean verifyDynamicPassword(String dynamicPassword){
+		String timeFlag = DateFormatUtils.format(new Date(), "HHmm").substring(0, 3) + "0";
+		String generatePassword = DigestUtils.md5Hex(timeFlag + "http://blog.csdn.net/jadyer" + timeFlag);
+		return StringUtils.isNotBlank(dynamicPassword) && generatePassword.equalsIgnoreCase(dynamicPassword);
 	}
 }

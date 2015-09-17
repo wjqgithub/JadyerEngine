@@ -9,6 +9,14 @@
  * 新增定时任务时的表单校验
  */
 function formValidate(){
+	if(isEmpty($("#dynamicPassword").val())){
+		alert("动态密码不能为空");
+		return false;
+	}
+	if($("#dynamicPassword").val() == "请输入动态密码（动态密码索取请联系玄玉）"){
+		alert("请输入动态密码");
+		return false;
+	}
 	if(isEmpty($("#name").val())){
 		alert("任务名称不能为空");
 		return false;
@@ -30,7 +38,7 @@ function formValidate(){
 function addTask(){
 	if(formValidate()){
 		$.post("${ctx}/quartz/schedule/task/add",
-				{status:"0", concurrent:$("#concurrent").val(), name:$("#name").val(), group:$("#group").val(), url:$("#url").val(), cron:$("#cron").val(), desc:$("#desc").val()},
+				{status:"0", concurrent:$("#concurrent").val(), name:$("#name").val(), group:$("#group").val(), url:$("#url").val(), cron:$("#cron").val(), desc:$("#desc").val(), dynamicPassword:$("#dynamicPassword").val()},
 				function(jsonData){
 					if(1000==jsonData.code){
 						location.reload();
@@ -46,14 +54,16 @@ function addTask(){
  * 删除定时任务
  */
 function deleteTask(id){
-	if(confirm("确定删除此任务么？")){
-		$.get("${ctx}/quartz/schedule/task/delete/"+id,function(data){
-			if(1000==data.code){
-				location.reload();
-			}else{
-				alert(data.message);
-			}
-		});
+	if(inputDynamicPassword()){
+		if(confirm("确定删除此任务么？")){
+			$.get("${ctx}/quartz/schedule/task/delete/"+id+"/"+dynamicPassword,function(data){
+				if(1000==data.code){
+					location.reload();
+				}else{
+					alert(data.message);
+				}
+			});
+		}
 	}
 }
 
@@ -61,8 +71,25 @@ function deleteTask(id){
  * 立即执行定时任务
  */
 function triggerJob(id){
-	if(confirm("确定立即执行此任务么？")){
-		$.get("${ctx}/quartz/schedule/task/triggerJob/"+id,function(data){
+	if(inputDynamicPassword()){
+		if(confirm("确定立即执行此任务么？")){
+			$.get("${ctx}/quartz/schedule/task/triggerJob/"+id+"/"+dynamicPassword,function(data){
+				if(1000==data.code){
+					location.reload();
+				}else{
+					alert(data.message);
+				}
+			});
+		}
+	}
+}
+
+/**
+ * 停止0/启动1/挂起2/恢复3定时任务
+ */
+function updateStatus(id, status){
+	if(inputDynamicPassword()){
+		$.get("${ctx}/quartz/schedule/task/updateStatus?id="+id+"&status="+status+"&dynamicPassword="+dynamicPassword,function(data){
 			if(1000==data.code){
 				location.reload();
 			}else{
@@ -73,31 +100,35 @@ function triggerJob(id){
 }
 
 /**
- * 停止0/启动1/挂起2/恢复3定时任务
- */
-function updateStatus(id, status){
-	$.get("${ctx}/quartz/schedule/task/updateStatus?id="+id+"&status="+status,function(data){
-		if(1000==data.code){
-			location.reload();
-		}else{
-			alert(data.message);
-		}
-	});
-}
-
-/**
  * 更新定时任务Cron表达式
  */
 function updateCron(id, cron){
-	var cron = prompt("请输入CronExpression", cron);
-	if(cron){
-		$.get("${ctx}/quartz/schedule/task/updateCron?id="+id+"&cron="+cron,function(data){
-			if(1000==data.code){
-				location.reload();
-			}else{
-				alert(data.message);
-			}
-		});
+	if(inputDynamicPassword()){
+		var cron = prompt("请输入CronExpression", cron);
+		if(cron){
+			$.get("${ctx}/quartz/schedule/task/updateCron?id="+id+"&cron="+cron+"&dynamicPassword="+dynamicPassword,function(data){
+				if(1000==data.code){
+					location.reload();
+				}else{
+					alert(data.message);
+				}
+			});
+		}
+	}
+}
+
+/**
+ * 提示用户输入动态密码
+ * @see http://tool.oschina.net/encrypt?type=2
+ */
+var dynamicPassword = null;
+function inputDynamicPassword(){
+	var _dynamicPassword = prompt("请输入动态密码", "动态密码索取请联系玄玉");
+	if(!isEmpty(_dynamicPassword) && _dynamicPassword!="动态密码索取请联系玄玉"){
+		dynamicPassword = _dynamicPassword;
+		return true;
+	}else{
+		return false;
 	}
 }
 </script>
@@ -162,8 +193,7 @@ function updateCron(id, cron){
 				</td>
 				<td><input type="text" name="url" id="url" size="32"/></td>
 				<td><input type="text" name="cron" id="cron" value="0/10 * * * * ?" size="12"/></td>
-				<td>&nbsp;</td>
-				<td>&nbsp;</td>
+				<td colspan="2"><input type="text" name="dynamicPassword" id="dynamicPassword" value="请输入动态密码（动态密码索取请联系玄玉）" size="34"/></td>
 				<td><input type="button" onclick="addTask()" value="保存"/></td>
 			</form>
 		</tr>
