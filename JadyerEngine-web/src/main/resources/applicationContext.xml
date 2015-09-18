@@ -104,17 +104,87 @@
 				<property name="supportedMediaTypes" value="application/json;charset=UTF-8"/>
 				<property name="features">
 					<array>
+						<value>PrettyFormat</value>
 						<value>WriteMapNullValue</value>
 						<value>WriteNullListAsEmpty</value>
 						<value>WriteNullNumberAsZero</value>
 						<value>WriteNullStringAsEmpty</value>
 						<value>WriteNullBooleanAsFalse</value>
+						<value>WriteDateUseDateFormat</value>
 					</array>
 				</property>
 			</bean>
 		</mvc:message-converters>
 	</mvc:annotation-driven>
-	<mvc:resources mapping="/js/**" location="/js/"/>
+
+	<!-- fastjson-1.2.7与SpringMVC整合 -->
+	<!-- 
+	1)若按照jackson和SpringMVC的整合方式,应按照下面的写法,但测试发现这样会报告"HTTP Status 406"
+	  The resource identified by this request is only capable of generating responses
+	  with characteristics not acceptable according to the request "accept" headers.
+	2)测试通过的整合方式为上面那样在mvc:annotation-driven里面进行注册
+	3)supportedMediaTypes增加[text/html;charset=UTF-8]值,是为了兼容IE6
+	     否则[application/json]值在IE6中会导致弹出对话框询问是否保存文件,而firefox等高级浏览器会正常打印json字符串
+	4)若像下面这样给supportedMediaTypes属性赋两个值[text/html;charset=UTF-8]和[application/json],则[application/json]是无效的
+	     因为此时应答给浏览器(或者说请求方)的Content-Type头信息都是[text/html;charset=UTF-8],所以给它一个值就行了
+	     如果给supportedMediaTypes的值为[application/json],则应答给浏览器的Content-Type头信息就是[application/json;charset=UTF-8]
+	5)关于features属性,不是serializerFeature,而是features,详见FastJsonHttpMessageConverter.java
+	     它是用来控制json序列化输出时的一些额外属性,比如说该字段是否输出、输出时key使用单引号还是双引号、key不使用任何引号等等
+	  SortField================输出时是否排序字段,默认为true
+	  PrettyFormat=============输出时是否格式化字段,默认为false
+	  BrowserSecure============输出时是否Unicode转码字段值,默认为false,比如它会将"天-河"转为"\u5929\u002D\u6CB3"
+	  QuoteFieldNames==========输出key时是否使用双引号,默认为true
+	  WriteMapNullValue========是否输出值为null的字段,默认为false
+	  WriteNullNumberAsZero====数值字段如果为null,输出为0,而非null
+	  WriteNullListAsEmpty=====List字段如果为null,输出为[],而非null
+	  WriteNullStringAsEmpty===字符类型字段如果为null,输出为"",而非null
+	  WriteNullBooleanAsFalse==Boolean字段如果为null,输出为false,而非null
+	  WriteDateUseDateFormat===Date字段输出为yyyy-MM-dd HH:mm:ss,而非默认的类似毫秒数的一大堆数字
+	6)通常在网上搜到的fastjson和springMVC整合的例子中都像下面注释的代码那样给了两个属性WriteMapNullValue和QuoteFieldNames
+	     这就表示为json解析器设置QuoteFieldNames和WriteMapNullValue的值为true,即输出时key使用双引号,同时也输出值为null的字段
+	7)输出时某字段为String类型,且值为null,此时若需要其输出,且输出值为空字符串,则需同时赋值WriteMapNullValue和WriteNullStringAsEmpty
+	     经测试,若只赋值WriteNullStringAsEmpty,则不会输出该字段..加上WriteMapNullValue属性后,便输出了,且输出值不是null,而是预期的空字符串
+	8)关于为WriteDateUseDateFormat参数自定义dateFormatPattern的方式
+	  1.2.7版本中的FastJsonHttpMessageConverter并未提供设置dateFormatPattern的入口
+	     通过FastJsonHttpMessageConverter.writeInternal()方法我们发现它实际调用的是JSON.toJSONString(obj, features)
+	     而不是调用JSON.toJSONString(obj, dateFormat, features),所以若希望自定义dateFormatPattern就只能暂时自己写一个MessageConverter
+	 -->
+	<!-- 
+	<bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+		<property name="messageConverters">
+			<list>
+				<bean class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+					<property name="supportedMediaTypes">
+						<list>
+							<value>text/html;charset=UTF-8</value>
+							<value>application/json</value>
+						</list>
+					</property>
+					<property name="serializerFeature">
+						<array>
+							<value>QuoteFieldNames</value>
+							<value>WriteMapNullValue</value>
+						</array>
+					</property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+	 -->
+	<!-- 
+	<bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+		<property name="messageConverters">
+			<list>
+				<bean class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">
+					<property name="supportedMediaTypes" value="text/html;charset=UTF-8"/>
+				</bean>
+			</list>
+		</property>
+	</bean>
+	 -->
+
+	<!-- 静态文件客户端缓存60*60*24*10 -->
+	<mvc:resources mapping="/js/**" location="/js/" cache-period="864000"/>
 	<mvc:resources mapping="/css/**" location="/css/"/>
 	<mvc:resources mapping="/image/**" location="/image/"/>
 	<mvc:resources mapping="/404.jsp" location="/404.jsp"/>

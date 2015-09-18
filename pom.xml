@@ -32,7 +32,7 @@
 		<apache.log4j.version>1.2.17</apache.log4j.version>
 		<apache.httpclient.version>4.2.1</apache.httpclient.version>
 		<alibaba.druid.version>1.0.15</alibaba.druid.version>
-		<alibaba.fastjson.version>1.2.6</alibaba.fastjson.version>
+		<alibaba.fastjson.version>1.2.7</alibaba.fastjson.version>
 		<jsp.jstl.version>1.2.1</jsp.jstl.version>
 		<jsp.standard.version>1.1.2</jsp.standard.version>
 		<ZXing.version>2.2</ZXing.version>
