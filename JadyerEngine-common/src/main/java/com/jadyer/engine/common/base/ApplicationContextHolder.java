@@ -21,6 +21,9 @@ public class ApplicationContextHolder implements ApplicationContextAware {
 	}
 
 	public static Object getBean(String beanName){
+		if(null == ApplicationContextHolder.applicationContext){
+			throw new NullPointerException("applicationContext is null.");
+		}
 		return applicationContext.getBean(beanName);
 	}
 }

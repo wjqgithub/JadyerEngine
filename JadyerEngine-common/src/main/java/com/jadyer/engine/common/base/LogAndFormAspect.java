@@ -18,6 +18,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.jadyer.engine.common.constant.CodeEnum;
 import com.jadyer.engine.common.exception.EngineException;
 import com.jadyer.engine.common.util.IPUtil;
@@ -47,10 +48,12 @@ public class LogAndFormAspect {
 		//String paramInfo = JSON.toJSONString(args);
 		/**
 		 * 打印Controller入参
-		 * @see 也可以使用@Resource注入private HttpServletRequest request;再加上setRequest()即可
-		 * @see 当使用@Resource注入HttpServletRequest时,在JUnit中通过new ClassPathXmlApplicationContext("applicationContext.xml")加载Spring时会报告下面的异常
-		 * @see org.springframework.beans.factory.NoSuchBeanDefinitionException: No qualifying bean of type [javax.servlet.http.HttpServletRequest] found for dependency
-		 * @see 所以这里通过RequestContextHolder来获取HttpServletRequest
+		 * @see 1.也可以使用@Resource注入private HttpServletRequest request;再加上setRequest()即可
+		 * @see   当使用@Resource注入HttpServletRequest时,在JUnit中通过new ClassPathXmlApplicationContext("applicationContext.xml")加载Spring时会报告下面的异常
+		 * @see   org.springframework.beans.factory.NoSuchBeanDefinitionException: No qualifying bean of type [javax.servlet.http.HttpServletRequest] found for dependency
+		 * @see   所以这里通过RequestContextHolder来获取HttpServletRequest
+		 * @see 2.当上传文件时,由于表单设置了enctype="multipart/form-data",会将表单用其它的文本域与file域一起作为流提交
+		 * @see   所以此时request.getParameter()是无法获取到表单中的文本域的,这时可以借助文件上传组件来获取比如org.apache.commons.fileupload.FileItem
 		 */
 		HttpServletRequest request = ((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest();
 		Enumeration<String> paramEnum = request.getParameterNames();
@@ -83,7 +86,8 @@ public class LogAndFormAspect {
 		if(null!=respData && respData.getClass().isAssignableFrom(ResponseEntity.class)){
 			returnInfo = "ResponseEntity";
 		}else{
-			returnInfo = JSON.toJSONString(respData);
+			//returnInfo = JSON.toJSONString(respData, true);
+			returnInfo = JSON.toJSONStringWithDateFormat(respData, "yyyy-MM-dd HH:mm:ss", SerializerFeature.PrettyFormat, SerializerFeature.WriteMapNullValue, SerializerFeature.WriteNullStringAsEmpty, SerializerFeature.WriteNullNumberAsZero, SerializerFeature.WriteNullListAsEmpty, SerializerFeature.WriteNullBooleanAsFalse);
 		}
 		LogUtil.getLogger().info(methodInfo + "()被调用, 出参为" + returnInfo + ", Duration[" + (endTime-startTime) + "]ms");
 		LogUtil.getLogger().info("---------------------------------------------------------------------------------------------");
