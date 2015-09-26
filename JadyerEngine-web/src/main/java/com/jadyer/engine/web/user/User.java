@@ -30,6 +30,13 @@ public class User {
 	
 	private String createTime;
 	
+//	@Pattern(regexp="(^$)|(^0|50|100$)", message="只能为0或50或100或不传值(建议传100)")
+//	private String resize;
+//	@Pattern(regexp="^\\b[1-9]\\d{0,1}\\b$", message="pageNo只能为1--99之间的数字")
+//	private String pageNo;
+//	@Pattern(regexp="^1\\d{1}|2\\d[0,1,2,3,4,5]{1}", message="pageSize只能为10--25之间的数字")
+//	private String pageSize;
+	
 	public int getId() {
 		return id;
 	}
