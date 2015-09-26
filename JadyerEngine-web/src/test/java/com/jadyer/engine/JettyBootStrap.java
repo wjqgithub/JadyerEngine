@@ -1,4 +1,4 @@
-package com.jadyer.engine.test;
+package com.jadyer.engine;
 
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
@@ -9,12 +9,29 @@ import org.springframework.util.Log4jConfigurer;
 
 /**
  * Jetty嵌入式服务器引导程序
+ * @see ------------------------------------------------------------------------------------------
+ * @see Tomcat-8.0.23启动参数
+ * @see catalina.sh
+ * @see 第97行(即第98行[OS specific support.  $var _must_ be set to either true or false.]上面的空白行)增加如下启动参数
+ * @see JAVA_OPTS="-server -Xms512M -Xmx1024M -Xmn192M -XX:NewSize=64m -XX:MaxNewSize=512m -XX:PermSize=512m -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC"
+ * @see ------------------------------------------------------------------------------------------
+ * @see 配置Tomcat启动时读取应用参数
+ * @see 启动时会通过catalina.sh来读取当前目录下的setenv.sh
+ * @see 于是就可以在setenv.sh中配置一些参数,使得应用可以在开发/测试/集成等环境加载不同的配置文件
+ * @see JAVA_OPTS="$JAVA_OPTS -Dappenv.active=dev"
+ * @see ------------------------------------------------------------------------------------------
+ * @see 如果想通过IP+Port的方式访问工程,可以采用下面的办法
+ * @see 1.删除webapps目录下的所有文件
+ * @see 2.将war命名为ROOT.war并放到webapps目录下
+ * @see 3.启动Tomcat即可
+ * @see ------------------------------------------------------------------------------------------
  * @see 本类用于启动Jetty嵌入式服务器
  * @see 本类部分整理自https://github.com/springside/springside4/wiki/Jetty,感谢江南白衣
+ * @see ------------------------------------------------------------------------------------------
  * @create Aug 8, 2015 12:45:48 PM
  * @author 玄玉<http://blog.csdn.net/jadyer>
  */
-public class JettyBootStrap {
+public class JettyBootStrap{
 	private int port = 8088;
 	private String appenv_active = "dev";
 	private String context_path = "/engine";

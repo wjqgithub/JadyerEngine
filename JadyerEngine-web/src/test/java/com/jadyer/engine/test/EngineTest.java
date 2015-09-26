@@ -32,7 +32,6 @@ import com.jadyer.engine.web.user.UserDaoJdbc;
 //		System.out.println("查询到的数据-->" + ReflectionToStringBuilder.toString(user, ToStringStyle.MULTI_LINE_STYLE));
 //	}
 //}
-
 public class EngineTest {
 	private static UserDaoJdbc userDaoJdbc;
 	

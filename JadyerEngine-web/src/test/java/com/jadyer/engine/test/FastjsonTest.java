@@ -247,4 +247,28 @@ public class FastjsonTest {
 			System.out.println("解析到["+len+"]个对象,第["+(i+1)+"]个对象属性如下" + ReflectionToStringBuilder.toString(list.get(i), ToStringStyle.MULTI_LINE_STYLE));
 		}
 	}
+
+
+//	/**
+//	 * 一个关于Jackson序列化与反序列化Map里面包含普通对象和List的JSON
+//	 * @create Sep 26, 2015 10:58:07 PM
+//	 * @author 玄玉<http://blog.csdn.net/jadyer>
+//	 */
+//	@Test
+//	@SuppressWarnings("unchecked")
+//	public void jscksonMapTest() throws JsonParseException, JsonMappingException, IOException{
+//		String loanInfo = "{\"attachments\":{\"ident_front\":\"实际的Base64的byte[]对应的字符串很长\",\"ident_back\":\"实际的Base64的byte[]对应的字符串很长\"},\"loan\":{\"productId\":\"1000001\"},\"bankCard\":{\"bankCardNo\":\"622600000000\",\"bankBranchProvinceCode\":\"230000\",\"bankBranchCityCode\":\"230100\"}}";
+//		String customerInfo = "{\"customer\":{\"name\":\"汪藏海\",\"mobile\":\"13612345678\",\"ident\":\"232126000000000000\",\"identCardExpire\":\"2020-09-20 00:00:00\",\"currentAddrProvince\":\"黑龙江省\",\"currentAddrProvinceCode\":\"230000\",\"currentAddrCity\":\"哈尔滨市\",\"currentAddrCityCode\":\"230100\",\"currentAddrDistrict\":\"巴彦县\",\"currentAddrDetail\":\"黑龙江省哈尔滨市巴彦县兴隆镇\",\"schoolName\":null,\"monthlyIncomeWork\":null,\"unitName\":null,\"unitPosition\":null,\"unitPhoneArea\":null,\"unitPhone\":null,\"unitPhoneExt\":null},\"contacts\":[{\"name\":\"铁面生\",\"relationShip\":\"其他\",\"phone\":\"13602200059\"},{\"name\":\"沈浪\",\"relationShip\":\"朋友\",\"phone\":\"13602200060\"}]}";
+//		Map<String, Map<String, String>> loanInfoMap = new ObjectMapper().readValue(loanInfo, Map.class);
+//		System.out.println(loanInfoMap.get("loan").get("productId"));
+//		System.out.println(loanInfoMap.get("bankCard").get("bankCardNo"));
+//		System.out.println(loanInfoMap.get("attachments").get("ident_front"));
+//		System.out.println("------------------------------------------------------------------------");
+//		Map<String, Map<String, String>> customerInfoMap11 = new ObjectMapper().readValue(customerInfo, Map.class);
+//		System.out.println(customerInfoMap11.get("customer").get("name"));
+//		System.out.println("------------------------------------------------------------------------");
+//		Map<String, List<Map<String,String>>> customerInfoMap22 = new ObjectMapper().readValue(customerInfo, Map.class);
+//		System.out.println(customerInfoMap22.get("contacts").get(0).get("name"));
+//		System.out.println(customerInfoMap22.get("contacts").get(1).get("name"));
+//	}
 }
