@@ -1,5 +1,6 @@
 package com.jadyer.engine.common.util;
 
+import java.util.Map;
 import java.util.Set;
 
 import javax.validation.ConstraintViolation;
@@ -8,6 +9,8 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 
 import org.apache.commons.lang3.StringUtils;
+
+import com.google.common.collect.Maps;
 
 /**
  * JSR303验证工具
@@ -38,7 +41,8 @@ import org.apache.commons.lang3.StringUtils;
  * @see 本工具类最下方的注释部分是一个例子
  * @see 另外也可参考文章http://haohaoxuexi.iteye.com/blog/1812584
  * @see -------------------------------------------------------------------------------------------
- * @version v1.0
+ * @version v1.1
+ * @history v1.0-->增加将验证的错误信息存入Map<String,String>后返回的<code>validateToMap()<code>方法
  * @history v1.0-->新建
  * @create 2015-6-9 下午11:25:18
  * @create 2015-6-9 下午11:25:18
@@ -53,6 +57,20 @@ public final class ValidatorUtil {
 	}
 
 	private ValidatorUtil() {}
+
+
+	/**
+	 * 判断属性是否属于例外属性列表
+	 * @return true--是例外属性,false--不是例外属性
+	 */
+	private static boolean isExcept(String field, String... exceptFieldName){
+		for(String obj : exceptFieldName){
+			if(StringUtils.isNotBlank(obj) && field.indexOf(obj)>=0){
+				return true;
+			}
+		}
+		return false;
+	}
 
 
 	/**
@@ -90,16 +108,35 @@ public final class ValidatorUtil {
 
 
 	/**
-	 * 判断属性是否属于例外属性列表
-	 * @return true--是例外属性,false--不是例外属性
+	 * 验证对象中的属性的值是否符合注解定义
+	 * @param obj 需要验证的对象
+	 * @return 返回空Map<String, String>(not null)表示验证通过,否则会将各错误字段作为key放入Map,value为错误信息
 	 */
-	private static boolean isExcept(String field, String... exceptFieldName){
-		for(String obj : exceptFieldName){
-			if(StringUtils.isNotBlank(obj) && field.indexOf(obj)>=0){
-				return true;
+	public static Map<String, String> validateToMap(Object obj){
+		return validateToMap(obj, new String[]{});
+	}
+
+
+	/**
+	 * 验证对象中的属性的值是否符合注解定义
+	 * @param obj             需要验证的对象
+	 * @param exceptFieldName 不需要验证的属性
+	 * @return 返回空Map<String, String>(not null)表示验证通过,否则会将各错误字段作为key放入Map,value为错误信息
+	 */
+	public static Map<String, String> validateToMap(Object obj, String... exceptFieldName){
+		Map<String, String> resultMap = Maps.newHashMap();
+		if(null == obj){
+			throw new NullPointerException("被验证对象不能为null");
+		}
+		Set<ConstraintViolation<Object>> validateSet = validator.validate(obj);
+		for(ConstraintViolation<Object> constraintViolation : validateSet){
+			String field = constraintViolation.getPropertyPath().toString();
+			String message = constraintViolation.getMessage();
+			if(!isExcept(field, exceptFieldName)){
+				resultMap.put(field, message);
 			}
 		}
-		return false;
+		return resultMap;
 	}
 }
 /*

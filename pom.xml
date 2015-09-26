@@ -31,6 +31,7 @@
 		<apache.mina.version>2.0.9</apache.mina.version>
 		<apache.log4j.version>1.2.17</apache.log4j.version>
 		<apache.httpclient.version>4.2.1</apache.httpclient.version>
+		<google.guava.version>18.0</google.guava.version>
 		<alibaba.druid.version>1.0.15</alibaba.druid.version>
 		<alibaba.fastjson.version>1.2.7</alibaba.fastjson.version>
 		<jsp.jstl.version>1.2.1</jsp.jstl.version>
@@ -97,7 +98,7 @@
 			<version>${Jadyer-tag.version}</version>
 		</dependency>
 
-		<!-- spring -->
+		<!-- Spring -->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
@@ -198,7 +199,7 @@
 			<version>${hibernate.entitymanager.version}</version>
 		</dependency>
 
-		<!-- apache -->
+		<!-- Apache -->
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
@@ -270,7 +271,14 @@
 			<version>${apache.httpclient.version}</version>
 		</dependency>
 
-		<!-- alibaba -->
+		<!-- Google -->
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>${google.guava.version}</version>
+		</dependency>
+
+		<!-- Alibaba -->
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>druid</artifactId>
@@ -282,7 +290,7 @@
 			<version>${alibaba.fastjson.version}</version>
 		</dependency>
 		
-		<!-- jstl -->
+		<!-- JSTL -->
 		<dependency>
 			<groupId>javax.servlet.jsp.jstl</groupId>
 			<artifactId>javax.servlet.jsp.jstl-api</artifactId>
@@ -294,7 +302,7 @@
 			<version>${jsp.standard.version}</version>
 		</dependency>
 
-		<!-- other -->
+		<!-- Other -->
 		<dependency>
 			<groupId>com.google.zxing</groupId>
 			<artifactId>core</artifactId>
@@ -409,6 +417,7 @@
 				<configuration>
 					<source>1.7</source>
 					<target>1.7</target>
+					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
 		</plugins>
