@@ -50,7 +50,7 @@ public final class RegexUtil {
 	 * @see -------------------------------------------------------------------------------------------------------
 	 */
 	public static boolean isPhone(String phone){
-		//return Pattern.matches("^(\\+\\d+)?((13\\d{9}$)|(15[0,1,2,3,5,6,7,8,9]\\d{8}$)|(18[0,2,5,6,7,8,9]\\d{8}$)|(14[5,7]\\d{8})$)$", phone);
+		//return Pattern.matches("^(\\+\\d+)?((13\\d{9}$)|(15[0,1,2,3,5,6,7,8,9]\\d{8}$)|(18[0,2,5,6,7,8,9]\\d{8}$)|(14[5,7]\\d{8})$)", phone);
 		String PHONE_MOBILE  = "^(86)?1((34[0-8]\\d{7})|(((3[5-9])|(5[012789])|(8[23478])|(47)|(78))\\d{8}))$";
 		String PHONE_UNICOM  = "^(86)?1((3[0-2]{1})|(45)|(5[56])|(8[56]|76))\\d{8}$";
 		String PHONE_TELECOM = "^(86)?1((33)|(53)|(8[019])|77)\\d{8}$";
@@ -80,7 +80,7 @@ public final class RegexUtil {
 	 * @param phone 座机号,格式为：国家(地区)代码+区号(城市代码)+电话号码,如:+8602085588447
 	 */
 	public static boolean isTelePhone(String telephone){
-		return Pattern.matches("^(\\+\\d+)?(\\d{3,4}\\-?)?\\d{7,8}$", telephone);
+		return Pattern.matches("(\\+\\d+)?(\\d{3,4}\\-?)?\\d{7,8}$", telephone);
 	}
 	
 	
@@ -88,7 +88,7 @@ public final class RegexUtil {
 	 * 验证Email
 	 */
 	public static boolean isEmail(String email){
-		return Pattern.matches("^\\w+@\\w+\\.[a-z]+(\\.[a-z]+)?$", email);
+		return Pattern.matches("\\w+@\\w+\\.[a-z]+(\\.[a-z]+)?", email);
 	}
 	
 	
@@ -97,7 +97,7 @@ public final class RegexUtil {
 	 * @see 身份证号码为15位或18位,且首位不能为0,尾位可以是字母或数字
 	 */
 	public static boolean isIdCard(String idCard){
-		return Pattern.matches("^[1-9]\\d{13,16}[xX0-9]{1}$", idCard);
+		return Pattern.matches("[1-9]\\d{13,16}[a-zA-Z0-9]{1}", idCard);
 	}
 	
 	
@@ -113,7 +113,7 @@ public final class RegexUtil {
 	 * 验证中国邮政编码
 	 */
 	public static boolean isPostCode(String postCode){
-		return Pattern.matches("^[1-9]\\d{5}$", postCode);
+		return Pattern.matches("[1-9]\\d{5}", postCode);
 	}
 	
 	
@@ -123,7 +123,7 @@ public final class RegexUtil {
 	 * @param ipAddress IPv4标准地址
 	 */
 	public static boolean isIPAddress(String ipAddress){
-		return Pattern.matches("^[1-9](\\d{1,2})?\\.(0|([1-9](\\d{1,2})?))\\.(0|([1-9](\\d{1,2})?))\\.(0|([1-9](\\d{1,2})?))$", ipAddress);
+		return Pattern.matches("[1-9](\\d{1,2})?\\.(0|([1-9](\\d{1,2})?))\\.(0|([1-9](\\d{1,2})?))\\.(0|([1-9](\\d{1,2})?))", ipAddress);
 	}
 	
 	
@@ -131,6 +131,6 @@ public final class RegexUtil {
 	 * 验证URL地址
 	 */
 	public static boolean isURL(String url){
-		return Pattern.matches("^(https?://(w{3}\\.)?)?\\w+\\.\\w+(\\.[a-zA-Z]+)*(:\\d{1,5})?(/\\w*)*(\\??(.+=.*)?(&.+=.*)?)?$", url);
+		return Pattern.matches("(https?://(w{3}\\.)?)?\\w+\\.\\w+(\\.[a-zA-Z]+)*(:\\d{1,5})?(/\\w*)*(\\??(.+=.*)?(&.+=.*)?)?", url);
 	}
 }

@@ -36,8 +36,6 @@ public class User {
 //	private String pageNo;
 //	@Pattern(regexp="^1\\d{1}|2\\d[0,1,2,3,4,5]{1}", message="pageSize只能为10--25之间的数字")
 //	private String pageSize;
-//	@Pattern(regexp="^[1-9][0-9]+(.[0-9]{1,2})?$", message="金额必须大于零且最多2位小数")
-//	private String amount;
 	
 	public int getId() {
 		return id;
