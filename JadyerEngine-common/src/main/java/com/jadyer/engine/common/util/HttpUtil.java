@@ -151,7 +151,7 @@ public final class HttpUtil {
 	 * @return 远程主机响应正文
 	 */
 	public static String get(String reqURL){
-		String respData = null;
+		String respData = "";
 		HttpClient httpClient = new DefaultHttpClient();
 		//设置代理服务器
 		//httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, new HttpHost("10.0.0.4", 8080));
@@ -180,6 +180,7 @@ public final class HttpUtil {
 			String respBodyMsg = respData;                               //HTTP应答报文体信息
 			System.out.println("HTTP应答完整报文=[" + respStatusLine + "\r\n" + respHeaderMsg + "\r\n\r\n" + respBodyMsg + "]");
 			System.out.println("-----------------------------------------------------------------------------");
+			return respData;
 		}catch(ConnectTimeoutException cte){
 			//Should catch ConnectTimeoutException, and don`t catch org.apache.http.conn.HttpHostConnectException
 			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
@@ -199,7 +200,6 @@ public final class HttpUtil {
 			//关闭连接,释放资源
 			httpClient.getConnectionManager().shutdown();
 		}
-		return respData;
 	}
 
 
@@ -216,7 +216,7 @@ public final class HttpUtil {
 	 * @return 远程主机响应正文
 	 */
 	public static String post(String reqURL, String reqData){
-		String respData = null;
+		String respData = "";
 		HttpClient httpClient = new DefaultHttpClient();
 		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
 		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, DEFAULT_SO_TIMEOUT);
@@ -231,6 +231,7 @@ public final class HttpUtil {
 			if(null != entity){
 				respData = EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset());
 			}
+			return respData;
 		}catch(ConnectTimeoutException cte){
 			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
 		}catch(SocketTimeoutException ste){
@@ -240,7 +241,6 @@ public final class HttpUtil {
 		}finally{
 			httpClient.getConnectionManager().shutdown();
 		}
-		return respData;
 	}
 
 
@@ -258,7 +258,7 @@ public final class HttpUtil {
 	 * @return 远程主机响应正文
 	 */
 	public static String postTLS(String reqURL, Map<String, String> params){
-		String respData = null;
+		String respData = "";
 		HttpClient httpClient = new DefaultHttpClient();
 		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
 		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, DEFAULT_SO_TIMEOUT);
@@ -307,6 +307,7 @@ public final class HttpUtil {
 			if(null != entity){
 				respData = EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset());
 			}
+			return respData;
 		}catch(ConnectTimeoutException cte){
 			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
 		}catch(SocketTimeoutException ste){
@@ -316,7 +317,6 @@ public final class HttpUtil {
 		}finally{
 			httpClient.getConnectionManager().shutdown();
 		}
-		return respData;
 	}
 
 
@@ -336,7 +336,7 @@ public final class HttpUtil {
 	 * @return 远程主机响应正文
 	 */
 	public static String postWithUpload(String reqURL, String filename, InputStream is, String fileBodyName, Map<String, String> params){
-		String respData = null;
+		String respData = "";
 		HttpClient httpClient = new DefaultHttpClient();
 		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
 		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, DEFAULT_SO_TIMEOUT);
@@ -358,6 +358,7 @@ public final class HttpUtil {
 			if(null != entity){
 				respData = EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset());
 			}
+			return respData;
 		}catch(ConnectTimeoutException cte){
 			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
 		}catch(SocketTimeoutException ste){
@@ -368,7 +369,6 @@ public final class HttpUtil {
 			httpClient.getConnectionManager().shutdown();
 			tmpFile.delete();
 		}
-		return respData;
 	}
 
 
@@ -387,12 +387,12 @@ public final class HttpUtil {
 	 * @return 应答Map有两个key,isSuccess--yes or no,fullPath--isSuccess为yes时返回文件完整保存路径,failReason--isSuccess为no时返回下载失败的原因
 	 */
 	public static Map<String, Object> postWithDownload(String reqURL, Map<String, String> params){
-		HttpEntity entity = null;
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		HttpClient httpClient = new DefaultHttpClient();
 		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
 		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, DEFAULT_SO_TIMEOUT);
 		HttpPost httpPost = new HttpPost(reqURL);
+		HttpEntity entity = null;
 		try{
 			//由于下面使用的是new UrlEncodedFormEntity(....),所以这里不需要手工指定CONTENT_TYPE为application/x-www-form-urlencoded
 			//因为在查看了HttpClient的源码后发现,UrlEncodedFormEntity所采用的默认CONTENT_TYPE就是application/x-www-form-urlencoded
@@ -441,6 +441,7 @@ public final class HttpUtil {
 				resultMap.put("isSuccess", "no");
 				resultMap.put("failReason", EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset()));
 			}
+			return resultMap;
 		}catch(ConnectTimeoutException cte){
 			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
 		}catch(SocketTimeoutException ste){
@@ -455,7 +456,6 @@ public final class HttpUtil {
 			}
 			httpClient.getConnectionManager().shutdown();
 		}
-		return resultMap;
 	}
 
 
