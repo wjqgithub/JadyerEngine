@@ -1,0 +1,8 @@
+[
+    {
+        "request": {
+            "uri": "/"
+        }, 
+        "redirectTo": "http://blog.csdn.net/jadyer"
+    }
+]

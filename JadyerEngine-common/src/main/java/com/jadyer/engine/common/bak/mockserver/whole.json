@@ -1,0 +1,10 @@
+[
+    {
+        "context": "/", 
+        "include": "root.json"
+    },
+    {
+        "context": "/mockserver", 
+        "include": "openapi.json"
+    }
+]

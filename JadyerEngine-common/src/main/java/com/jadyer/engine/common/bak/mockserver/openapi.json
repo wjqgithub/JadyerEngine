@@ -1,0 +1,44 @@
+[
+    {
+        "request": {
+            "uri": "/"
+        }, 
+        "response": {
+	    "charset": "UTF-8",
+            "text": "这是测试的URL"
+        }
+    },
+    {
+        "request": {
+            "method": "post", 
+            "headers": {
+                "content-type": "application/json"
+            }, 
+            "forms": {
+                "productCd": "41010012"
+            }, 
+            "uri": "/api/v1/applies"
+        }, 
+        "response": {
+            "json": {
+                "applyNo": "20150918012345"
+            }
+        }
+    }, 
+    {
+        "request": {
+            "method": "get", 
+            "uri": "/api/v1/applies/20150918012345", 
+            "queries": {
+                "mobile": "13600000001"
+            }
+        }, 
+        "response": {
+            "json": {
+                "applyNo": "20150918012345", 
+                "applyTime": "2015-09-18 09:50:55", 
+                "status": "U"
+            }
+        }
+    }
+]
