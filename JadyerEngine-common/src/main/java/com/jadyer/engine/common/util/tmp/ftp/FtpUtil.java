@@ -20,7 +20,7 @@ import com.jadyer.engine.common.util.LogUtil;
 /**
  * FTP工具类
  * @see -----------------------------------------------------------------------------------------------------------
- * http://aspnetdb.iteye.com/blog/970408(org.apache.commons.net.ftp.FTP.java的367行)
+ * @see http://aspnetdb.iteye.com/blog/970408(org.apache.commons.net.ftp.FTP.java的367行)
  * @see -----------------------------------------------------------------------------------------------------------
  * @version v1.0
  * @history v1.0-->新建
@@ -128,6 +128,7 @@ public final class FtpUtil {
 	 */
 	public static void logout(){
 		FTPClient ftpClient = ftpClientMap.get();
+		ftpClientMap.remove();
 		if(null != ftpClient){
 			try{
 				ftpClient.logout();
@@ -174,6 +175,7 @@ public final class FtpUtil {
 	 * 上传文件
 	 * @see 该方法与{@link FtpUtil#uploadAndLogout(String, String, String, String, InputStream)}的区别是,上传完文件后没有登出服务器及释放连接,但会关闭输入流
 	 * @see 之所以提供该方法是用于同时上传多个文件的情况下,使之能够共用一个FTP连接
+	 * @see 该方法会在上传完文件后,自动登出服务器,并释放FTP连接,同时关闭输入流
 	 * @param hostname  目标主机地址
 	 * @param username  FTP登录用户
 	 * @param password  FTP登录密码
@@ -181,7 +183,7 @@ public final class FtpUtil {
 	 * @param is        文件输入流
 	 * @return True if successfully completed, false if not.
 	 */
-	public static boolean upload(String hostname, String username, String password, String remoteURL, InputStream is){
+	public static boolean upload(String hostname, String username, String password, String remoteURL, InputStream is, boolean autoClose){
 		if(!login(hostname, username, password, false, DEFAULT_DEFAULT_TIMEOUT, DEFAULT_CONNECT_TIMEOUT, DEFAULT_DATA_TIMEOUT)){
 			return false;
 		}
@@ -198,25 +200,9 @@ public final class FtpUtil {
 			return false;
 		}finally{
 			IOUtils.closeQuietly(is);
-		}
-	}
-
-
-	/**
-	 * 上传文件
-	 * @see 该方法会在上传完文件后,自动登出服务器,并释放FTP连接,同时关闭输入流
-	 * @param hostname  目标主机地址
-	 * @param username  FTP登录用户
-	 * @param password  FTP登录密码
-	 * @param remoteURL 保存在FTP上的含完整路径和后缀的完整文件名
-	 * @param is        文件输入流
-	 * @return True if successfully completed, false if not.
-	 */
-	public static boolean uploadAndLogout(String hostname, String username, String password, String remoteURL, InputStream is){
-		try{
-			return upload(hostname, username, password, remoteURL, is);
-		}finally{
-			logout();
+			if(autoClose){
+				logout();
+			}
 		}
 	}
 
