@@ -26,10 +26,11 @@ import com.jadyer.engine.common.exception.EngineException;
  * @see 3.Connection closed without indication.
  * @see   这个错误的原因就是FTP服务器端发生故障或者网络出现问题
  * @see -----------------------------------------------------------------------------------------------------------
- * @version v1.1
+ * @version v1.2
+ * @history v1.2-->登录FTP的方法中增加对ThreadLocal获取到的FTPClient可用性判断以防止重复登录FTP
  * @history v1.1-->增加<code>deleteFileAndLogout(String, String, String, String)<code>删除FTP文件的方法
  * @history v1.0-->新建并提供了上传和下载文件的方法,以及操作完成后自动logout并释放连接
- * @update Oct 6, 2015 3:55:16 PM
+ * @update Oct 6, 2015 5:14:38 PM
  * @create 2015-6-22 上午11:22:34
  * @author 玄玉<http://blog.csdn.net/jadyer>
  */
@@ -53,6 +54,9 @@ public final class FtpUtil {
 		FTPClient ftpClient = ftpClientMap.get();
 		if(null == ftpClient){
 			ftpClient = new FTPClient();
+		}
+		if(ftpClient.isAvailable() && ftpClient.isConnected()){
+			return true;
 		}
 		ftpClient.setDefaultTimeout(0==defaultTimeout ? DEFAULT_DEFAULT_TIMEOUT : defaultTimeout);
 		ftpClient.setConnectTimeout(0==connectTimeout ? DEFAULT_CONNECT_TIMEOUT : connectTimeout);
