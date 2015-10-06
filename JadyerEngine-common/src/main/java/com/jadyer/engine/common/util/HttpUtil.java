@@ -65,6 +65,12 @@ import com.jadyer.engine.common.exception.EngineException;
  * @see -----------------------------------------------------------------------------------------------------------
  * @see 本工具类中的部分方法用到了HttpComponents-Client-4.2.1
  * @see -----------------------------------------------------------------------------------------------------------
+ * @see 关于HttpComponents-4.3提供的FluentAPI及集合SpringRestTemplate详见以下网址介绍
+ * @see https://github.com/springside/springside4/wiki/HttpClient
+ * @see http://liuxing.info/2015/05/21/RestTemplate实践/
+ * @see http://my.oschina.net/sannychan/blog/485677
+ * @see http://www.cnblogs.com/hupengcool/p/4590006.html
+ * @see -----------------------------------------------------------------------------------------------------------
  * @see 开发HTTPS应用的过程中,时常会遇到下面两种情况
  * @see 1.测试服务器没有有效的HTTPS证书,客户端连接时就会抛异常
  * @see   javax.net.ssl.SSLPeerUnverifiedException: peer not authenticated
