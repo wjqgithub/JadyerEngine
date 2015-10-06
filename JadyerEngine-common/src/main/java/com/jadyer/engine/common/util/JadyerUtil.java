@@ -144,8 +144,8 @@ public final class JadyerUtil {
 			return uuid;
 		}
 	}
-	
-	
+
+
 	/**
 	 * 获取Map中的属性
 	 * @see 由于Map.toString()打印出来的参数值对,是横着一排的...参数多的时候,不便于查看各参数值
@@ -161,13 +161,32 @@ public final class JadyerUtil {
 		return sb.append("\n]").toString();
 	}
 
-	
+
+	/**
+	 * 获取Map中的属性
+	 * @see 该方法的参数适用于打印Map<String, String[]>的情况
+	 * @see 由于Map.toString()打印出来的参数值对,是横着一排的...参数多的时候,不便于查看各参数值
+	 * @see 故此仿照commons-lang3.jar中的ReflectionToStringBuilder.toString()编写了本方法
+	 * @return String key11=value11 \n key22=value22 \n key33=value33 \n......
+	 */
+	public static String buildStringFromMapWithStringArray(Map<String, String[]> map){
+		StringBuilder sb = new StringBuilder();
+		sb.append(map.getClass().getName()).append("@").append(map.hashCode()).append("[");
+		for(Map.Entry<String,String[]> entry : map.entrySet()){
+			sb.append("\n").append(entry.getKey()).append("=").append(Arrays.toString(entry.getValue()));
+		}
+		return sb.append("\n]").toString();
+	}
+
+
 	/**
 	 * 获取Map中的属性
 	 * @see 该方法的参数适用于打印Map<String, byte[]>的情况
+	 * @see 由于Map.toString()打印出来的参数值对,是横着一排的...参数多的时候,不便于查看各参数值
+	 * @see 故此仿照commons-lang3.jar中的ReflectionToStringBuilder.toString()编写了本方法
 	 * @return String key11=value11 \n key22=value22 \n key33=value33 \n......
 	 */
-	public static String buildStringFromMapForByte(Map<String, byte[]> map){
+	public static String buildStringFromMapWithByteArray(Map<String, byte[]> map){
 		StringBuilder sb = new StringBuilder();
 		sb.append(map.getClass().getName()).append("@").append(map.hashCode()).append("[");
 		for(Map.Entry<String,byte[]> entry : map.entrySet()){
@@ -175,29 +194,16 @@ public final class JadyerUtil {
 		}
 		return sb.append("\n]").toString();
 	}
-	
-	
-	/**
-	 * 获取Map中的属性
-	 * @see 该方法的参数适用于打印Map<String, Object>的情况
-	 * @return String key11=value11 \n key22=value22 \n key33=value33 \n......
-	 */
-	public static String buildStringFromMapForObject(Map<String, Object> map){
-		StringBuilder sb = new StringBuilder();
-		sb.append(map.getClass().getName()).append("@").append(map.hashCode()).append("[");
-		for(Map.Entry<String,Object> entry : map.entrySet()){
-			sb.append("\n").append(entry.getKey()).append("=").append(entry.getValue().toString());
-		}
-		return sb.append("\n]").toString();
-	}
-	
-	
+
+
 	/**
 	 * 获取实体类中的属性
 	 * @see 本方法用到了反射,其适用于所有的属性类型均为byte[]的JavaBean
-	 * @return String field11=value11 field22=value22 field33=value33
+	 * @see 由于Map.toString()打印出来的参数值对,是横着一排的...参数多的时候,不便于查看各参数值
+	 * @see 故此仿照commons-lang3.jar中的ReflectionToStringBuilder.toString()编写了本方法
+	 * @return String key11=value11 \n key22=value22 \n key33=value33 \n......
 	 */
-	public static String buildStringFromObjectForByte(Object obj){
+	public static String buildStringFromObjectWithByte(Object obj){
 		//局部的StringBuffer一律StringBuilder之
 		StringBuilder sb = new StringBuilder();
 		sb.append(obj.getClass().getName()).append("@").append(obj.hashCode()).append("[");
@@ -221,8 +227,8 @@ public final class JadyerUtil {
 		}
 		return sb.append("\n]").toString();
 	}
-	
-	
+
+
 	/**
 	 * 通过ASCII码将十进制的字节数组格式化为十六进制字符串
 	 * @see 该方法会将字节数组中的所有字节均格式化为字符串

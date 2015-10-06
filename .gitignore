@@ -43,6 +43,7 @@ hs_err_pid*
 .settings
 .project
 .classpath
+.myeclipse
 .mymetadata
 # 忽略target/目录下的所有文件
 target/
