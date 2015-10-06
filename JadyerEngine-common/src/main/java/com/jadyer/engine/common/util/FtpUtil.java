@@ -29,7 +29,7 @@ import com.jadyer.engine.common.exception.EngineException;
  * @see   这个错误的原因就是FTP服务器端发生故障或者网络出现问题
  * @see -----------------------------------------------------------------------------------------------------------
  * @version v1.2
- * @history v1.2-->登录FTP的方法中增加对ThreadLocal获取到的FTPClient可用性判断以防止重复登录FTP
+ * @history v1.2-->增加防止重复登录FTP的判定以及上传和下载文件时支持断点续传的备用注释代码
  * @history v1.1-->增加<code>deleteFileAndLogout(String, String, String, String)<code>删除FTP文件的方法
  * @history v1.0-->新建并提供了上传和下载文件的方法,以及操作完成后自动logout并释放连接
  * @update Oct 6, 2015 5:14:38 PM
@@ -310,7 +310,7 @@ public final class FtpUtil {
 			//如果待删除文件不存在,ftpClient.deleteFile()会返回false
 			return ftpClientMap.get().deleteFile(remoteURL);
 		}catch(IOException e){
-			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "从FTP服务器["+hostname+"]下载文件["+remoteURL+"]失败", e);
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "从FTP服务器["+hostname+"]删除文件["+remoteURL+"]失败", e);
 		}finally{
 			logout();
 		}
