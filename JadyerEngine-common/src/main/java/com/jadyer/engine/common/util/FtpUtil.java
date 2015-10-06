@@ -26,9 +26,10 @@ import com.jadyer.engine.common.exception.EngineException;
  * @see 3.Connection closed without indication.
  * @see   这个错误的原因就是FTP服务器端发生故障或者网络出现问题
  * @see -----------------------------------------------------------------------------------------------------------
- * @version v1.0
+ * @version v1.1
+ * @history v1.1-->增加<code>deleteFileAndLogout(String, String, String, String)<code>删除FTP文件的方法
  * @history v1.0-->新建并提供了上传和下载文件的方法,以及操作完成后自动logout并释放连接
- * @update Oct 6, 2015 2:43:17 PM
+ * @update Oct 6, 2015 3:55:16 PM
  * @create 2015-6-22 上午11:22:34
  * @author 玄玉<http://blog.csdn.net/jadyer>
  */
@@ -273,6 +274,32 @@ public final class FtpUtil {
 				throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "远程文件不存在");
 			}
 			FileUtils.copyInputStreamToFile(ftpClient.retrieveFileStream(remoteURL), new File(localURL));
+		}catch(IOException e){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "从FTP服务器["+hostname+"]下载文件["+remoteURL+"]失败", e);
+		}finally{
+			logout();
+		}
+	}
+
+
+	/**
+	 * 文件删除
+	 * @see 该方法会在删除完文件后,自动登出服务器,并释放FTP连接
+	 * @param hostname  目标主机地址
+	 * @param username  FTP登录用户
+	 * @param password  FTP登录密码
+	 * @param remoteURL 保存在FTP上的含完整路径和后缀的完整文件名
+	 * @return True if successfully completed, false if not.
+	 */
+	public static boolean deleteFileAndLogout(String hostname, String username, String password, String remoteURL){
+		if(!login(hostname, username, password, false, DEFAULT_DEFAULT_TIMEOUT, DEFAULT_CONNECT_TIMEOUT, DEFAULT_DATA_TIMEOUT)){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "FTP服务器登录失败");
+		}
+		try{
+			//ftpClient.rename(from, to)
+			//ftpClient.removeDirectory(pathname)
+			//如果待删除文件不存在,ftpClient.deleteFile()会返回false
+			return ftpClientMap.get().deleteFile(remoteURL);
 		}catch(IOException e){
 			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "从FTP服务器["+hostname+"]下载文件["+remoteURL+"]失败", e);
 		}finally{

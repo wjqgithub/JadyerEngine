@@ -128,7 +128,7 @@ public class UtilTest {
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	@Test
-	public void FtpUtilForUploadTest() throws IOException{
+	public void FtpUtilForUploadTest() throws IOException {
 		InputStream is = FileUtils.openInputStream(new File("E:\\Wallpaper\\三大名迹.jpg"));
 		String remoteURL = "/mytest/02/03/" + DateFormatUtils.format(new Date(), "yyyyMMddHHmmss") + ".jpg";
 		Assert.assertTrue(FtpUtil.uploadAndLogout("192.168.2.60", "ftpupload", "HUvueMGWg92y8SSN", remoteURL, is));
@@ -141,7 +141,7 @@ public class UtilTest {
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	@Test
-	public void FtpUtilForDownloadTest() throws IOException{
+	public void FtpUtilForDownloadTest() throws IOException {
 		String remoteURL = "/mytest/02/03/20151006115200.jpg";
 		String localURL = "C:\\Users\\Jadyer.JADYER-PC.000\\Desktop\\aa.jpg";
 		FtpUtil.downloadAndLogout("192.168.2.60", "ftpupload", "HUvueMGWg92y8SSN", remoteURL, localURL);
@@ -149,6 +149,18 @@ public class UtilTest {
 		FileUtils.copyInputStreamToFile(is, new File("C:\\Users\\Jadyer.JADYER-PC.000\\Desktop\\bb.jpg"));
 		FtpUtil.ftpClientMap.get().logout();
 		FtpUtil.ftpClientMap.get().disconnect();
+	}
+
+
+	/**
+	 * FTP删除测试
+	 * @create Oct 6, 2015 3:33:42 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	@Test
+	public void FtpUtilForDeleteFileTest(){
+		String remoteURL = "/mytest/02/03/20151006151054_test.jpg";
+		Assert.assertTrue("文件不存在", FtpUtil.deleteFileAndLogout("192.168.2.60", "ftpupload", "HUvueMGWg92y8SSN", remoteURL));
 	}
 
 
