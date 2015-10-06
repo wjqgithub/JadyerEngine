@@ -1,10 +1,12 @@
 package com.jadyer.engine.test;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -14,10 +16,14 @@ import java.util.UUID;
 
 import javax.validation.constraints.Min;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.hibernate.validator.constraints.NotBlank;
+import org.junit.Assert;
 import org.junit.Test;
 
+import com.jadyer.engine.common.util.FtpUtil;
 import com.jadyer.engine.common.util.HttpUtil;
 import com.jadyer.engine.common.util.ImageUtil;
 import com.jadyer.engine.common.util.ValidatorUtil;
@@ -67,13 +73,24 @@ public class UtilTest {
 
 
 	/**
+	 * 图片压缩测试
+	 * @create 2015-6-6 下午5:23:58
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	@Test
+	public void imageUtilTest(){
+		ImageUtil.resize("C:/Users/Jadyer/Desktop/IMG_1007.JPG", "C:/Users/Jadyer/Desktop/image2233.jpg", 100);
+	}
+
+
+	/**
 	 * 文件上传测试
 	 * @see 如果无法上传,很有可能是config.properties中的authentication.anonymous没有配置file/**
 	 * @create 2015-6-5 下午1:00:40
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	@Test
-	public void fileUploadTest() throws FileNotFoundException{
+	public void httpUtilForUploadTest() throws FileNotFoundException{
 		String reqURL = "http://127.0.0.1:8080/engine/file/upload";
 		String filename = "菱纱.jpg";
 		InputStream is = new FileInputStream("E:\\Wallpaper\\菱纱.jpg");
@@ -92,7 +109,7 @@ public class UtilTest {
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	@Test
-	public void fileDownloadTest() throws IOException{
+	public void httpUtilForDownloadTest() throws IOException{
 		String reqURL = "http://127.0.0.1:8080/engine/file/download";
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("sysCode", "33");
@@ -106,20 +123,32 @@ public class UtilTest {
 
 
 	/**
-	 * ******************************************************************************************
-	 * 华丽的分界线
-	 * ******************************************************************************************
-	 */
-
-
-	/**
-	 * 图片压缩测试
-	 * @create 2015-6-6 下午5:23:58
+	 * FTP上传测试
+	 * @create Oct 5, 2015 7:52:36 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	@Test
-	public void imageUtilTest(){
-		ImageUtil.resize("C:/Users/Jadyer/Desktop/IMG_1007.JPG", "C:/Users/Jadyer/Desktop/image2233.jpg", 100);
+	public void FtpUtilForUploadTest() throws IOException{
+		InputStream is = FileUtils.openInputStream(new File("E:\\Wallpaper\\三大名迹.jpg"));
+		String remoteURL = "/mytest/02/03/" + DateFormatUtils.format(new Date(), "yyyyMMddHHmmss") + ".jpg";
+		Assert.assertTrue(FtpUtil.uploadAndLogout("192.168.2.60", "ftpupload", "HUvueMGWg92y8SSN", remoteURL, is));
+	}
+	
+
+	/**
+	 * FTP下载测试
+	 * @create Oct 6, 2015 11:52:27 AM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	@Test
+	public void FtpUtilForDownloadTest() throws IOException{
+		String remoteURL = "/mytest/02/03/20151006115200.jpg";
+		String localURL = "C:\\Users\\Jadyer.JADYER-PC.000\\Desktop\\aa.jpg";
+		FtpUtil.downloadAndLogout("192.168.2.60", "ftpupload", "HUvueMGWg92y8SSN", remoteURL, localURL);
+		InputStream is = FtpUtil.download("192.168.2.60", "ftpupload", "HUvueMGWg92y8SSN", remoteURL);
+		FileUtils.copyInputStreamToFile(is, new File("C:\\Users\\Jadyer.JADYER-PC.000\\Desktop\\bb.jpg"));
+		FtpUtil.ftpClientMap.get().logout();
+		FtpUtil.ftpClientMap.get().disconnect();
 	}
 
 

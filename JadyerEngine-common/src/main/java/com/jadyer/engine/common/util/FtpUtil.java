@@ -1,4 +1,4 @@
-package com.jadyer.engine.common.util.tmp.ftp;
+package com.jadyer.engine.common.util;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,24 +15,28 @@ import org.apache.commons.net.ftp.FTPReply;
 
 import com.jadyer.engine.common.constant.CodeEnum;
 import com.jadyer.engine.common.exception.EngineException;
-import com.jadyer.engine.common.util.LogUtil;
 
 /**
  * FTP工具类
  * @see -----------------------------------------------------------------------------------------------------------
- * @see http://aspnetdb.iteye.com/blog/970408(org.apache.commons.net.ftp.FTP.java的367行)
+ * @see 1.登出时要注意ftpClient.disconnect()的时机,ftpClient.logout()也会抛异常
+ * @see   所要注意避免FTPClient对象退出异常,连接没有释放,最后积少成多直至阻塞FTP服务器的连接,进而引发连接异常
+ * @see 2.FTP response 421 received.  Server closed connection.
+ * @see   这个错误的原因就是FTP服务器端连接数满了
+ * @see 3.Connection closed without indication.
+ * @see   这个错误的原因就是FTP服务器端发生故障或者网络出现问题
  * @see -----------------------------------------------------------------------------------------------------------
  * @version v1.0
- * @history v1.0-->新建
- * @update 2015-6-22 上午11:22:34
+ * @history v1.0-->新建并提供了上传和下载文件的方法,以及操作完成后自动logout并释放连接
+ * @update Oct 6, 2015 2:43:17 PM
  * @create 2015-6-22 上午11:22:34
  * @author 玄玉<http://blog.csdn.net/jadyer>
  */
 public final class FtpUtil {
 	private static final String DEFAULT_CHARSET = "UTF-8";
-	private static final int DEFAULT_DEFAULT_TIMEOUT = 20000;
-	private static final int DEFAULT_CONNECT_TIMEOUT = 10000;
-	private static final int DEFAULT_DATA_TIMEOUT = 20000;
+	private static final int DEFAULT_DEFAULT_TIMEOUT = 0;
+	private static final int DEFAULT_CONNECT_TIMEOUT = 1000;
+	private static final int DEFAULT_DATA_TIMEOUT = 0;
 	public static ThreadLocal<FTPClient> ftpClientMap = new ThreadLocal<FTPClient>();
 	private FtpUtil(){}
 
@@ -130,18 +134,19 @@ public final class FtpUtil {
 		FTPClient ftpClient = ftpClientMap.get();
 		ftpClientMap.remove();
 		if(null != ftpClient){
+			String ftpRemoteAddress = ftpClient.getRemoteAddress().toString();
 			try{
 				ftpClient.logout();
-				LogUtil.getLogger().info("FTP服务器["+ftpClient.getRemoteAddress()+"]登出成功...");
+				LogUtil.getLogger().info("FTP服务器[" + ftpRemoteAddress + "]登出成功...");
 			}catch (IOException e){
-				LogUtil.getLogger().info("FTP服务器["+ftpClient.getRemoteAddress()+"]登出时发生异常,堆栈轨迹如下", e);
+				LogUtil.getLogger().info("FTP服务器[" + ftpRemoteAddress + "]登出时发生异常,堆栈轨迹如下", e);
 			}finally{
 				if(null!=ftpClient && ftpClient.isConnected()){
 					try {
 						ftpClient.disconnect();
-						LogUtil.getLogger().info("FTP服务器["+ftpClient.getRemoteAddress()+"]连接释放完毕...");
+						LogUtil.getLogger().info("FTP服务器[" + ftpRemoteAddress + "]连接释放完毕...");
 					} catch (IOException ioe) {
-						LogUtil.getLogger().info("FTP服务器["+ftpClient.getRemoteAddress()+"]连接释放时发生异常,堆栈轨迹如下", ioe);
+						LogUtil.getLogger().info("FTP服务器[" + ftpRemoteAddress + "]连接释放时发生异常,堆栈轨迹如下", ioe);
 					}
 				}
 			}
@@ -151,20 +156,19 @@ public final class FtpUtil {
 
 	/**
 	 * 创建远程目录
-	 * @param remotePath 不含文件名的远程路径
+	 * @param remotePath 不含文件名的远程路径(格式为/a/b/c)
 	 */
 	private static void createRemoteFolder(FTPClient ftpClient, String remotePath) throws IOException{
-		remotePath = remotePath.replaceAll("\\\\", "/");
 		String[] folders = remotePath.split("/");
 		String remoteTempPath = "";
 		for(String folder : folders){
 			if(StringUtils.isNotBlank(folder)){
 				remoteTempPath += "/" + folder;
 				boolean flag = ftpClient.changeWorkingDirectory(remoteTempPath);
-				LogUtil.getLogger().info("change working directory : " + remoteTempPath + "-->" + (flag?"成功":"失败"));
+				LogUtil.getLogger().info("change working directory : " + remoteTempPath + "-->" + (flag?"SUCCESS":"FAIL"));
 				if(!flag){
 					flag = ftpClient.makeDirectory(remoteTempPath);
-					LogUtil.getLogger().info("make directory : " + remoteTempPath + "-->" + (flag?"成功":"失败"));
+					LogUtil.getLogger().info("make directory : " + remoteTempPath + "-->" + (flag?"SUCCESS":"FAIL"));
 				}
 			}
 		}
@@ -175,7 +179,6 @@ public final class FtpUtil {
 	 * 上传文件
 	 * @see 该方法与{@link FtpUtil#uploadAndLogout(String, String, String, String, InputStream)}的区别是,上传完文件后没有登出服务器及释放连接,但会关闭输入流
 	 * @see 之所以提供该方法是用于同时上传多个文件的情况下,使之能够共用一个FTP连接
-	 * @see 该方法会在上传完文件后,自动登出服务器,并释放FTP连接,同时关闭输入流
 	 * @param hostname  目标主机地址
 	 * @param username  FTP登录用户
 	 * @param password  FTP登录密码
@@ -183,15 +186,16 @@ public final class FtpUtil {
 	 * @param is        文件输入流
 	 * @return True if successfully completed, false if not.
 	 */
-	public static boolean upload(String hostname, String username, String password, String remoteURL, InputStream is, boolean autoClose){
+	public static boolean upload(String hostname, String username, String password, String remoteURL, InputStream is){
 		if(!login(hostname, username, password, false, DEFAULT_DEFAULT_TIMEOUT, DEFAULT_CONNECT_TIMEOUT, DEFAULT_DATA_TIMEOUT)){
 			return false;
 		}
 		FTPClient ftpClient = ftpClientMap.get();
 		try{
-			if(ftpClient.changeWorkingDirectory(remoteURL)){
+			remoteURL = FilenameUtils.separatorsToUnix(remoteURL);
+			if(!ftpClient.changeWorkingDirectory(FilenameUtils.getFullPathNoEndSeparator(remoteURL))){
 				createRemoteFolder(ftpClient, FilenameUtils.getFullPathNoEndSeparator(remoteURL));
-				ftpClient.changeWorkingDirectory(remoteURL);
+				ftpClient.changeWorkingDirectory(FilenameUtils.getFullPathNoEndSeparator(remoteURL));
 			}
 			String remoteFile = new String(FilenameUtils.getName(remoteURL).getBytes(DEFAULT_CHARSET), "ISO-8859-1");
 			return ftpClient.storeFile(remoteFile, is);
@@ -200,9 +204,25 @@ public final class FtpUtil {
 			return false;
 		}finally{
 			IOUtils.closeQuietly(is);
-			if(autoClose){
-				logout();
-			}
+		}
+	}
+
+
+	/**
+	 * 上传文件
+	 * @see 该方法会在上传完文件后,自动登出服务器,并释放FTP连接,同时关闭输入流
+	 * @param hostname  目标主机地址
+	 * @param username  FTP登录用户
+	 * @param password  FTP登录密码
+	 * @param remoteURL 保存在FTP上的含完整路径和后缀的完整文件名
+	 * @param is        文件输入流
+	 * @return True if successfully completed, false if not.
+	 */
+	public static boolean uploadAndLogout(String hostname, String username, String password, String remoteURL, InputStream is){
+		try{
+			return upload(hostname, username, password, remoteURL, is);
+		}finally{
+			logout();
 		}
 	}
 

@@ -1,4 +1,4 @@
-package com.jadyer.engine.common.util.tmp.ftp;
+package com.jadyer.engine.common.util.tmp;
 
 import java.io.File;
 import java.io.FileOutputStream;
