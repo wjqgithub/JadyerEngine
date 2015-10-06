@@ -3,11 +3,13 @@ package com.jadyer.engine.common.util;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.net.PrintCommandListener;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
@@ -61,7 +63,10 @@ public final class FtpUtil {
 		ftpClient.setDefaultTimeout(0==defaultTimeout ? DEFAULT_DEFAULT_TIMEOUT : defaultTimeout);
 		ftpClient.setConnectTimeout(0==connectTimeout ? DEFAULT_CONNECT_TIMEOUT : connectTimeout);
 		ftpClient.setDataTimeout(0==dataTimeout ? DEFAULT_DATA_TIMEOUT : dataTimeout);
-		ftpClient.setControlEncoding(DEFAULT_CHARSET); //防止读取文件名乱码
+		//防止读取文件名乱码
+		ftpClient.setControlEncoding(DEFAULT_CHARSET);
+		//输出FTP交互过程中使用到的命令到控制台
+		ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out)));
 		try {
 			ftpClient.connect(hostname, FTP.DEFAULT_PORT);
 		} catch (Exception e) {
