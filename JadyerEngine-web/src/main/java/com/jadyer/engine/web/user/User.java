@@ -38,6 +38,12 @@ public class User {
 //	private String pageSize;
 //	@Pattern(regexp="^[1-9][0-9]+(.[0-9]{1,2})?$", message="金额必须大于零且最多2位小数")
 //	private String amount;
+//	@NotBlank
+//	@Pattern(regexp="^\\d{3,4}$", message="贷款金额超限(最少100,最多9999)")
+//	private String loanAmount;
+//	@NotBlank
+//	@Pattern(regexp="^\\d{2}$", message="贷款期数无效(必须是固长2位整数,比如03或12)")
+//	private String loanPeriod;
 	
 	public int getId() {
 		return id;
