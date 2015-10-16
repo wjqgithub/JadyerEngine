@@ -312,8 +312,18 @@ public final class JadyerUtil {
 		}
 		return buildHexStringWithASCII(data, offset, length);
 	}
-	
-	
+
+
+	/**
+	 * 判断一个整数是否为奇数
+	 * @see 本方法中0/-0/-2/2都不是奇数,-1/1/-3/3都是奇数
+	 * @return true--是奇数,false--不是奇数
+	 */
+	public static boolean isOddNumber(int num){
+		return (num & 1) != 0;
+	}
+
+
 	/**
 	 * 判断输入的字符串参数是否为空
 	 * @return boolean 空则返回true,非空则flase
