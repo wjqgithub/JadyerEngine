@@ -14,6 +14,8 @@ import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
+import org.apache.commons.net.io.CopyStreamEvent;
+import org.apache.commons.net.io.CopyStreamListener;
 
 import com.jadyer.engine.common.constant.CodeEnum;
 import com.jadyer.engine.common.exception.EngineException;
@@ -28,11 +30,12 @@ import com.jadyer.engine.common.exception.EngineException;
  * @see 3.Connection closed without indication.
  * @see   这个错误的原因就是FTP服务器端发生故障或者网络出现问题
  * @see -----------------------------------------------------------------------------------------------------------
- * @version v1.2
+ * @version v1.3
+ * @history v1.3-->增加FTP传输进度显示[    0%   101890  33KB/s  58351458   3s]
  * @history v1.2-->增加防止重复登录FTP的判定以及上传和下载文件时支持断点续传的备用注释代码
  * @history v1.1-->增加<code>deleteFileAndLogout(String, String, String, String)<code>删除FTP文件的方法
  * @history v1.0-->新建并提供了上传和下载文件的方法,以及操作完成后自动logout并释放连接
- * @update Oct 6, 2015 5:14:38 PM
+ * @update Oct 22, 2015 10:04:37 AM
  * @create 2015-6-22 上午11:22:34
  * @author 玄玉<http://blog.csdn.net/jadyer>
  */
@@ -65,6 +68,8 @@ public final class FtpUtil {
 		ftpClient.setDataTimeout(0==dataTimeout ? DEFAULT_DATA_TIMEOUT : dataTimeout);
 		//防止读取文件名乱码
 		ftpClient.setControlEncoding(DEFAULT_CHARSET);
+		//如果FTP传输速度特别慢,设置一下该参数就会大大提高传输速度(它默认的好像是1024)
+		//ftpClient.setBufferSize(102400);
 		//输出FTP交互过程中使用到的命令到控制台
 		ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out)));
 		try {
@@ -208,6 +213,7 @@ public final class FtpUtil {
 				ftpClient.changeWorkingDirectory(FilenameUtils.getFullPathNoEndSeparator(remoteURL));
 			}
 			String remoteFile = new String(FilenameUtils.getName(remoteURL).getBytes(DEFAULT_CHARSET), "ISO-8859-1");
+			ftpClient.setCopyStreamListener(new FTPProcess(is.available(), System.currentTimeMillis()));
 			return ftpClient.storeFile(remoteFile, is);
 		}catch(IOException e){
 			LogUtil.getLogger().error("文件["+remoteURL+"]上传到FTP服务器["+hostname+"]失败,堆栈轨迹如下", e);
@@ -314,6 +320,48 @@ public final class FtpUtil {
 		}finally{
 			logout();
 		}
+	}
+}
+
+
+/**
+ * FTP传输进度显示
+ * @see     0%   101890  33KB/s  58351458   3s
+ * @see     0%   101891  33KB/s  58351458   3s
+ * @see     0%   101892  33KB/s  58351458   3s
+ * @see     0%   101893  33KB/s  58351458   3s
+ * @see     0%   101894  33KB/s  58351458   3s
+ * @see     0%   101895  33KB/s  58351458   3s
+ * @see     0%   101896  33KB/s  58351458   3s
+ * @create Oct 22, 2015 9:42:16 AM
+ * @author 玄玉<http://blog.csdn.net/jadyer>
+ */
+class FTPProcess implements CopyStreamListener {
+	private long fileSize;
+	private long startTime;
+	public FTPProcess(long fileSize, long startTime){
+		this.fileSize = fileSize;
+		this.startTime = startTime;
+	}
+	@Override
+	public void bytesTransferred(CopyStreamEvent copyStreamEvent){}
+	/**
+	 * 本次传输了多少字节
+	 * @param totalBytesTransferred 到目前为止已经传输的字节数
+	 * @param bytesTransferred      本次传输的字节数
+	 * @param streamSize            The number of bytes in the stream being copied
+	 */
+	@Override
+	public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize){
+		long end_time = System.currentTimeMillis();
+		long time = (end_time - startTime) / 1000; //耗时
+		long speed;                                //速度
+		if(0 == time){
+			speed = 0;
+		}else{
+			speed = totalBytesTransferred/1024/time;
+		}
+		System.out.printf("\r    %d%%   %d  %dKB/s  %d   %ds", totalBytesTransferred*100/fileSize, totalBytesTransferred, speed, fileSize, time);
 	}
 }
 //import java.io.File;
