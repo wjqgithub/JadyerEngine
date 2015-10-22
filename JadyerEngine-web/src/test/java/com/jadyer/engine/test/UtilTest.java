@@ -140,7 +140,7 @@ public class UtilTest {
 		String remoteURL = "/mytest/02/03/" + DateFormatUtils.format(new Date(), "yyyyMMddHHmmss") + ".jpg";
 		Assert.assertTrue(FtpUtil.uploadAndLogout("192.168.2.60", "ftpupload", "HUvueMGWg92y8SSN", remoteURL, is));
 	}
-	
+
 
 	/**
 	 * FTP下载测试
@@ -167,6 +167,44 @@ public class UtilTest {
 	public void FtpUtilForDeleteFileTest(){
 		String remoteURL = "/mytest/02/03/20151006151054_test.jpg";
 		Assert.assertTrue("文件不存在", FtpUtil.deleteFileAndLogout("192.168.2.60", "ftpupload", "HUvueMGWg92y8SSN", remoteURL));
+	}
+
+
+	/**
+	 * SFTP上传测试
+	 * @create Oct 22, 2015 11:00:07 AM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	@Test
+	public void FtpUtilForUploadViaSFTPTest() throws IOException{
+		InputStream is = FileUtils.openInputStream(new File("F:\\Tool\\Wireshark-win32-1.4.9中文版.exe"));
+		String remoteURL = "/upload/test/sf/" + DateFormatUtils.format(new Date(), "yyyyMMddHHmmss") + ".exe";
+		Assert.assertTrue(FtpUtil.uploadAndLogoutViaSFTP("192.168.2.41", 22, "yizhifu", "YMQwcUZh2LvhmR87d7tjmqoRbj6ST1", remoteURL, is));
+	}
+
+
+	/**
+	 * SFTP下载测试
+	 * @create Oct 22, 2015 3:46:32 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	@Test
+	public void FtpUtilForDownloadViaSFTPTest() throws IOException {
+		String remoteURL = "/upload/test/sf/20151022151736.exe";
+		String localURL = "C:\\Users\\Jadyer.JADYER-PC.000\\Desktop\\aa.exe";
+		FtpUtil.downloadAndLogoutViaSFTP("192.168.2.41", 22, "yizhifu", "YMQwcUZh2LvhmR87d7tjmqoRbj6ST1", remoteURL, localURL);
+	}
+
+
+	/**
+	 * SFTP删除测试
+	 * @create Oct 22, 2015 3:46:45 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	@Test
+	public void FtpUtilForDeleteFileViaSFTPTest(){
+		String remoteURL = "/upload/test/sf/20151022151451.exe";
+		Assert.assertTrue("文件不存在", FtpUtil.deleteFileAndLogoutViaSFTP("192.168.2.41", 22, "yizhifu", "YMQwcUZh2LvhmR87d7tjmqoRbj6ST1", remoteURL));
 	}
 
 

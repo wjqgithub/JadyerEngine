@@ -1,6 +1,7 @@
 package com.jadyer.engine.common.util;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -19,6 +20,13 @@ import org.apache.commons.net.io.CopyStreamListener;
 
 import com.jadyer.engine.common.constant.CodeEnum;
 import com.jadyer.engine.common.exception.EngineException;
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
+import com.jcraft.jsch.SftpProgressMonitor;
 
 /**
  * FTP工具类
@@ -30,7 +38,8 @@ import com.jadyer.engine.common.exception.EngineException;
  * @see 3.Connection closed without indication.
  * @see   这个错误的原因就是FTP服务器端发生故障或者网络出现问题
  * @see -----------------------------------------------------------------------------------------------------------
- * @version v1.3
+ * @version v2.0
+ * @history v2.0-->增加JSch实现的SFTP上传和下载等静态方法
  * @history v1.3-->增加FTP传输进度显示[    0%   101890  33KB/s  58351458   3s]
  * @history v1.2-->增加防止重复登录FTP的判定以及上传和下载文件时支持断点续传的备用注释代码
  * @history v1.1-->增加<code>deleteFileAndLogout(String, String, String, String)<code>删除FTP文件的方法
@@ -44,20 +53,23 @@ public final class FtpUtil {
 	private static final int DEFAULT_DEFAULT_TIMEOUT = 0;
 	private static final int DEFAULT_CONNECT_TIMEOUT = 1000;
 	private static final int DEFAULT_DATA_TIMEOUT = 0;
+	private static final int DEFAULT_SFTP_TIMEOUT = 0;
 	public static ThreadLocal<FTPClient> ftpClientMap = new ThreadLocal<FTPClient>();
+	public static ThreadLocal<ChannelSftp> channelSftpMap = new ThreadLocal<ChannelSftp>();
 	private FtpUtil(){}
 
 	/**
 	 * 连接并登录FTP服务器
 	 * @see 可以在该方法中配置一些连接FTP的属性
-	 * @param hostname  FTP地址
-	 * @param username  FTP登录用户
-	 * @param password  FTP登录密码
+	 * @param hostname FTP地址
+	 * @param username FTP登录用户
+	 * @param password FTP登录密码
 	 * @return True if successfully completed, false if not.
 	 */
 	private static boolean login(String hostname, String username, String password, boolean isTextMode, int defaultTimeout, int connectTimeout, int dataTimeout){
 		FTPClient ftpClient = ftpClientMap.get();
 		if(null == ftpClient){
+			ftpClientMap.remove();
 			ftpClient = new FTPClient();
 		}
 		if(ftpClient.isAvailable() && ftpClient.isConnected()){
@@ -321,6 +333,244 @@ public final class FtpUtil {
 			logout();
 		}
 	}
+
+
+	/**
+	 * 连接并登录SFTP服务器
+	 * @param hostname FTP地址
+	 * @param username FTP登录用户
+	 * @param password FTP登录密码
+	 * @param timeout  超时时间,单位ms,it use java.net.Socket.setSoTimeout(timeout) 
+	 * @return True if successfully completed, false if not.
+	 */
+	private static boolean loginViaSFTP(String hostname, int port, String username, String password, int timeout){
+		ChannelSftp channelSftp = channelSftpMap.get();
+		if(null!=channelSftp && channelSftp.isConnected()){
+			return true;
+		}
+		channelSftpMap.remove();
+		JSch jsch = new JSch();
+		Session session = null;
+		Channel channel = null;
+		channelSftp = null;
+		try {
+			session = jsch.getSession(username, hostname, port);
+		} catch (JSchException e) {
+			LogUtil.getLogger().warn("SFTP Server[" + hostname + "] Session created failed,堆栈轨迹如下", e);
+			return false;
+		}
+		session.setPassword(password);
+		//Security.addProvider(new com.sun.crypto.provider.SunJCE());
+		//Setup Strict HostKeyChecking to no so we dont get the unknown host key exception
+		session.setConfig("StrictHostKeyChecking", "no");
+		try {
+			session.setTimeout(timeout);
+			session.connect();
+		} catch (Exception e) {
+			LogUtil.getLogger().warn("SFTP Server[" + hostname + "] Session connected failed,堆栈轨迹如下", e);
+			return false;
+		}
+		try {
+			channel = session.openChannel("sftp");
+			channel.connect();
+			channelSftp = (ChannelSftp)channel;
+			channelSftpMap.set(channelSftp);
+			LogUtil.getLogger().warn("SFTP Server[" + hostname + "] connected success...当前所在目录为" + channelSftp.pwd());
+			return true;
+		} catch (Exception e) {
+			LogUtil.getLogger().warn("SFTP Server[" + hostname + "] Opening FTP Channel failed,堆栈轨迹如下", e);
+			return false;
+		}
+	}
+
+
+	/**
+	 * 登出SFTP服务器
+	 * @see 由于FtpUtil会自动维护ChannelSftp,故调用该方法便可直接登出SFTP
+	 */
+	public static void logoutViaSFTP(){
+		ChannelSftp channelSftp = channelSftpMap.get();
+		channelSftpMap.remove();
+		String hostname = null;
+		try {
+			hostname = channelSftp.getHome();
+			if(null != channelSftp){
+				channelSftp.quit();
+			}
+			if(null != channelSftp.getSession()){
+				channelSftp.getSession().disconnect();
+			}
+		} catch (Exception e) {
+			LogUtil.getLogger().warn("Unable to disconnect from SFTP server[" + hostname + "]", e);
+		}
+	}
+
+
+	/**
+	 * 创建远程目录
+	 * @param remotePath 不含文件名的远程路径(格式为/a/b/c)
+	 */
+	private static void createRemoteFolderViaSFTP(ChannelSftp channelSftp, String remotePath){
+		String[] folders = remotePath.split("/");
+		String remoteTempPath = "";
+		for(String folder : folders){
+			if(StringUtils.isNotBlank(folder)){
+				remoteTempPath += "/" + folder;
+				boolean flag = true;
+				try{
+					channelSftp.cd(remoteTempPath);
+				}catch(SftpException e){
+					flag = false;
+				}
+				LogUtil.getLogger().info("change working directory : " + remoteTempPath + "-->" + (flag?"SUCCESS":"FAIL"));
+				if(!flag){
+					try{
+						channelSftp.mkdir(remoteTempPath);
+						flag = true;
+					}catch(SftpException e){}
+					LogUtil.getLogger().info("make directory : " + remoteTempPath + "-->" + (flag?"SUCCESS":"FAIL"));
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * upload Via SFTP without auto logout
+	 * @see 1.写文件到不存在的目录会报告[2: No such file]
+	 * @see 2.写文件到未授权的目录会报告[3: Permission denied]
+	 * @param hostname  SFTP地址
+	 * @param port      SFTP端口(通常为22)
+	 * @param username  SFTP登录用户
+	 * @param password  SFTP登录密码
+	 * @param remoteURL 保存在SFTP上的含完整路径和后缀的完整文件名
+	 * @param is        文件输入流
+	 * @return True if successfully upload completed, false if not.
+	 */
+	public static boolean uploadViaSFTP(String hostname, int port, String username, String password, String remoteURL, InputStream is){
+		if(!loginViaSFTP(hostname, port, username, password, DEFAULT_SFTP_TIMEOUT)){
+			return false;
+		}
+		ChannelSftp channelSftp = channelSftpMap.get();
+		remoteURL = FilenameUtils.separatorsToUnix(remoteURL);
+		String remoteDirectory = FilenameUtils.getFullPathNoEndSeparator(remoteURL);
+		try{
+			channelSftp.cd(remoteDirectory);
+		}catch(SftpException e){
+			createRemoteFolderViaSFTP(channelSftp, remoteDirectory);
+			try{
+				channelSftp.cd(remoteDirectory);
+			}catch(SftpException e1){
+				//nothing to do
+			}
+		}
+		try{
+			String filename = new String(FilenameUtils.getName(remoteURL).getBytes(DEFAULT_CHARSET), "ISO-8859-1");
+			//channelSftp.put(is, filename);
+			channelSftp.put(is, filename, new SFTPProcess(is.available(), System.currentTimeMillis()));
+			return true;
+		}catch(Exception e){
+			LogUtil.getLogger().error("文件["+remoteURL+"]上传到FTP服务器["+hostname+"]失败,堆栈轨迹如下", e);
+			return false;
+		}finally{
+			IOUtils.closeQuietly(is);
+		}
+	}
+
+
+	/**
+	 * upload Via SFTP and auto logout
+	 * @see 该方法会在上传完文件后,自动登出服务器,并释放FTP连接,同时关闭输入流
+	 * @param hostname  SFTP地址
+	 * @param port      SFTP端口(通常为22)
+	 * @param username  SFTP登录用户
+	 * @param password  SFTP登录密码
+	 * @param remoteURL 保存在SFTP上的含完整路径和后缀的完整文件名
+	 * @param is        文件输入流
+	 * @return True if successfully upload completed, false if not.
+	 */
+	public static boolean uploadAndLogoutViaSFTP(String hostname, int port, String username, String password, String remoteURL, InputStream is){
+		try{
+			return uploadViaSFTP(hostname, port, username, password, remoteURL, is);
+		}finally{
+			logoutViaSFTP();
+		}
+	}
+
+
+	/**
+	 * download Via SFTP
+	 * @see 文件下载失败时,该方法会自动登出服务器并释放SFTP连接,然后抛出RuntimeException
+	 * @param hostname  SFTP地址
+	 * @param port      SFTP端口(通常为22)
+	 * @param username  SFTP登录用户
+	 * @param password  SFTP登录密码
+	 * @param remoteURL 保存在SFTP上的含完整路径和后缀的完整文件名
+	 */
+	public static InputStream downloadViaSFTP(String hostname, int port, String username, String password, String remoteURL){
+		if(!loginViaSFTP(hostname, port, username, password, DEFAULT_SFTP_TIMEOUT)){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "SFTP服务器登录失败");
+		}
+		try{
+			return channelSftpMap.get().get(FilenameUtils.separatorsToUnix(remoteURL));
+		}catch(SftpException e){
+			logoutViaSFTP();
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "从SFTP服务器["+hostname+"]下载文件["+remoteURL+"]失败", e);
+		}
+	}
+
+
+	/**
+	 * download Via SFTP and auto logout
+	 * @see 该方法会在下载完文件后,自动登出服务器,并释放SFTP连接,同时关闭输入流
+	 * @param hostname  SFTP地址
+	 * @param port      SFTP端口(通常为22)
+	 * @param username  SFTP登录用户
+	 * @param password  SFTP登录密码
+	 * @param remoteURL 保存在SFTP上的含完整路径和后缀的完整文件名
+	 * @param localURL  保存在本地的包含完整路径和后缀的完整文件名
+	 */
+	public static void downloadAndLogoutViaSFTP(String hostname, int port, String username, String password, String remoteURL, String localURL){
+		if(!loginViaSFTP(hostname, port, username, password, DEFAULT_SFTP_TIMEOUT)){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "SFTP服务器登录失败");
+		}
+		try{
+			//channelSftpMap.get().get(remoteURL, new FileOutputStream(new File(localURL)), new SFTPProcess(is.available(), System.currentTimeMillis()));
+			channelSftpMap.get().get(remoteURL, new FileOutputStream(new File(localURL)));
+		}catch(Exception e){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "从SFTP服务器["+hostname+"]下载文件["+remoteURL+"]失败", e);
+		}finally{
+			logoutViaSFTP();
+		}
+	}
+
+
+	/**
+	 * delete file Via SFTP and auto logout
+	 * @see 该方法会在删除完文件后,自动登出服务器,并释放FTP连接
+	 * @param hostname  SFTP地址
+	 * @param port      SFTP端口(通常为22)
+	 * @param username  SFTP登录用户
+	 * @param password  SFTP登录密码
+	 * @param remoteURL 保存在FTP上的含完整路径和后缀的完整文件名
+	 * @return True if successfully completed, false if not.
+	 */
+	public static boolean deleteFileAndLogoutViaSFTP(String hostname, int port, String username, String password, String remoteURL){
+		if(!loginViaSFTP(hostname, port, username, password, DEFAULT_SFTP_TIMEOUT)){
+			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "SFTP服务器登录失败");
+		}
+		try{
+			//channelSftpMap.get().rename(oldpath, newpath);
+			//channelSftpMap.get().rmdir(path)
+			channelSftpMap.get().rm(remoteURL);
+			return true;
+		}catch(Exception e){
+			LogUtil.getLogger().error("从SFTP服务器["+hostname+"]删除文件["+remoteURL+"]失败", e);
+			return false;
+		}finally{
+			logout();
+		}
+	}
 }
 
 
@@ -339,6 +589,10 @@ public final class FtpUtil {
 class FTPProcess implements CopyStreamListener {
 	private long fileSize;
 	private long startTime;
+	/**
+	 * @param fileSize  文件的大小,单位字节
+	 * @param startTime 开始的时间,可通过System.currentTimeMillis()获取
+	 */
 	public FTPProcess(long fileSize, long startTime){
 		this.fileSize = fileSize;
 		this.startTime = startTime;
@@ -364,6 +618,55 @@ class FTPProcess implements CopyStreamListener {
 		System.out.printf("\r    %d%%   %d  %dKB/s  %d   %ds", totalBytesTransferred*100/fileSize, totalBytesTransferred, speed, fileSize, time);
 	}
 }
+
+
+/**
+ * SFTP传输进度显示
+ * @see 每次传输count字节时,就会调用new SFTPProcess(fileSize, startTime)对象的count()方法
+ * @see     92%   18311601  17882KB/s  19903865   1s
+ * @see     92%   18344242  17914KB/s  19903865   1s
+ * @see     92%   18376883  17946KB/s  19903865   1s
+ * @see     92%   18409524  17978KB/s  19903865   1s
+ * @see     92%   18442165  18009KB/s  19903865   1s
+ * @create Oct 22, 2015 10:46:01 AM
+ * @author 玄玉<http://blog.csdn.net/jadyer>
+ */
+class SFTPProcess implements SftpProgressMonitor {
+	private long fileSize;
+	private long startTime;
+	private long totalBytesTransferred = 0;
+	/**
+	 * @param fileSize  文件的大小,单位字节
+	 * @param startTime 开始的时间,可通过System.currentTimeMillis()获取
+	 */
+	public SFTPProcess(long fileSize, long startTime){
+		this.fileSize = fileSize;
+		this.startTime = startTime;
+	}
+	@Override
+	public void init(int op, String src, String dest, long max){}
+	@Override
+	public void end(){}
+	/**
+	 * 本次传输了多少字节
+	 * @param count 本次传输了多少字节
+	 * @return true--继续传输,false--取消传输
+	 */
+	@Override
+	public boolean count(long count){
+		totalBytesTransferred += count;
+		long end_time = System.currentTimeMillis();
+		long time = (end_time - startTime) / 1000; //耗时
+		long speed;                                //速度
+		if(0 == time){
+			speed = 0;
+		}else{
+			speed = totalBytesTransferred/1024/time;
+		}
+		System.out.printf("\r    %d%%   %d  %dKB/s  %d   %ds", totalBytesTransferred*100/fileSize, totalBytesTransferred, speed, fileSize, time);
+		return true;
+	}
+}
 //import java.io.File;
 //import java.io.FileOutputStream;
 //import java.io.IOException;
@@ -380,8 +683,6 @@ class FTPProcess implements CopyStreamListener {
 //
 ///**
 // * 支持断点续传的FTP实用类
-// * @see 代码拷贝自http://zhouzaibao.iteye.com/blog/346000
-// * @author BenZhou
 // * @version 0.1 实现基本断点上传下载
 // * @version 0.2 实现上传下载进度汇报
 // * @version 0.3 实现中文目录创建及中文文件创建，添加对于中文的支持

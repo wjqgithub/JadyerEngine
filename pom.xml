@@ -38,6 +38,7 @@
 		<jsp.standard.version>1.1.2</jsp.standard.version>
 		<ZXing.version>2.2</ZXing.version>
 		<dom4j.version>1.6.1</dom4j.version>
+		<jsch.version>0.1.53</jsch.version>
 		<jcifs.version>1.3.17</jcifs.version>
 		<quartz.version>2.2.1</quartz.version>
 	</properties>
@@ -317,6 +318,11 @@
 			<groupId>dom4j</groupId>
 			<artifactId>dom4j</artifactId>
 			<version>${dom4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>${jsch.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>jcifs</groupId>
