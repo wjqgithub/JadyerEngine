@@ -122,7 +122,8 @@ import com.jadyer.engine.common.exception.EngineException;
  * @see    http://qzone-music.qq.com/fcg-bin/fcg_music_fav_getinfo.fcg?dirinfo=0&dirid=1&uin=QQ号&p=0.519638272547262&g_tk=1284234856
  * @see    http://v5.pc.duomi.com/search-ajaxsearch-searchall?kw=关键字&pi=页码&pz=每页音乐数
  * @see -----------------------------------------------------------------------------------------------------------
- * @version v2.4
+ * @version v2.5
+ * @history v2.5-->修复<code>postWithUpload()</code>方法的<code>Map<String, String> params</code>参数传入null时无法上传文件的BUG
  * @history v2.4-->重命名GET和POST方法名,全局定义通信报文编码和连接读取超时时间,通信发生异常时修改为直接抛出RuntimeException
  * @history v2.3-->增加<code>sendPostRequestWithUpload()</code><code>sendPostRequestWithDownload()</code>方法,用于上传和下载文件
  * @history v2.2-->增加<code>sendPostRequestBySocket()</code>方法,用于处理请求参数非字符串而是Map的情景
@@ -357,8 +358,8 @@ public final class HttpUtil {
 				for(Map.Entry<String,String> entry : params.entrySet()){
 					reqEntity.addPart(entry.getKey(), new StringBody(entry.getValue(), Charset.forName(DEFAULT_CHARSET)));
 				}
-				httpPost.setEntity(reqEntity);
 			}
+			httpPost.setEntity(reqEntity);
 			HttpResponse response = httpClient.execute(httpPost);
 			HttpEntity entity = response.getEntity();
 			if(null != entity){
