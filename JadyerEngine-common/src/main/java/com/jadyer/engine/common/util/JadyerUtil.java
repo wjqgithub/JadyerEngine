@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.imageio.ImageIO;
+import javax.servlet.http.HttpServletRequest;
 import javax.swing.filechooser.FileSystemView;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -69,7 +70,8 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * 玄玉的开发工具类
- * @version v3.2
+ * @version v3.3
+ * @version v3.3-->增加isAjaxRequest()用于判断是否为Ajax请求的方法
  * @version v3.2-->增加getCurrentWeekStartDate()和getCurrentWeekEndDate()用于获取本周开始和结束的时间
  * @history v3.1-->修改<code>captureScreen()</code>方法增加是否自动打开生成的抓屏图片的功能
  * @history v3.0-->修改<code>htmlEscape()</code>方法名为<code>escapeHtml()</code>,并新增<code>escapeXml</code>方法
@@ -358,8 +360,27 @@ public final class JadyerUtil {
 	public static boolean isNotEmpty(byte[] bytes){
 		return !isEmpty(bytes);
 	}
-	
-	
+
+
+	/**
+	 * 判断是否为Ajax请求
+	 * @create Nov 1, 2015 1:30:55 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	public static boolean isAjaxRequest(HttpServletRequest request){
+		String requestType = request.getHeader("X-Requested-With");
+		if(null!=requestType && "XMLHttpRequest".equals(requestType)){
+			return true;
+		}
+		requestType = request.getHeader("x-requested-with");
+		if(null!=requestType && "XMLHttpRequest".equals(requestType)){
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+
 	/**
 	 * 字符串转为字节数组
 	 * @see 该方法默认以ISO-8859-1转码
