@@ -36,7 +36,7 @@ public class User {
 //	private String pageNo;
 //	@Pattern(regexp="^1\\d{1}|2\\d[0,1,2,3,4,5]{1}", message="pageSize只能为10--25之间的数字")
 //	private String pageSize;
-//	@Pattern(regexp="^[1-9][0-9]+(.[0-9]{1,2})?$", message="金额必须大于零且最多2位小数")
+//	@Pattern(regexp="^(([1-9]\\d*)|0)(\\.\\d{1,2})?$", message="金额必须大于0且最多2位小数")
 //	private String amount;
 //	@NotBlank
 //	@Pattern(regexp="^\\d{3,4}$", message="贷款金额超限(最少100,最多9999)")
