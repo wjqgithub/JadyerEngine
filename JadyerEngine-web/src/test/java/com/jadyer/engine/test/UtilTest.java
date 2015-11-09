@@ -113,7 +113,7 @@ public class UtilTest {
 		String reqURL = "http://127.0.0.1:8080/engine/file/download";
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("sysCode", "33");
-		Map<String, Object> resultMap = HttpUtil.postWithDownload(reqURL, params);
+		Map<String, String> resultMap = HttpUtil.postWithDownload(reqURL, params);
 		if("yes".equals(resultMap.get("isSuccess"))){
 			System.out.println("文件下载成功,保存路径为" + resultMap.get("fullPath"));
 		}else{

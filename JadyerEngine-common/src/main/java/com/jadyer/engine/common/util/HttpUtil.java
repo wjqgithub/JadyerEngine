@@ -394,8 +394,8 @@ public final class HttpUtil {
 	 * @param params 请求参数,无参数时传null即可
 	 * @return 应答Map有两个key,isSuccess--yes or no,fullPath--isSuccess为yes时返回文件完整保存路径,failReason--isSuccess为no时返回下载失败的原因
 	 */
-	public static Map<String, Object> postWithDownload(String reqURL, Map<String, String> params){
-		Map<String, Object> resultMap = new HashMap<String, Object>();
+	public static Map<String, String> postWithDownload(String reqURL, Map<String, String> params){
+		Map<String, String> resultMap = new HashMap<String, String>();
 		HttpClient httpClient = new DefaultHttpClient();
 		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
 		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, DEFAULT_SO_TIMEOUT);
