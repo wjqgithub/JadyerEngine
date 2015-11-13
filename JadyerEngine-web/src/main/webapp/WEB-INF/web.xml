@@ -47,7 +47,7 @@
 	 -->
 
 
-	<!-- SpringMVC -->
+	<!-- SpringMVC(默认访问页面时才会加载SpringMVC,为了让它在启动时加载,故使用load-on-startup) -->
 	<servlet>
 		<servlet-name>SpringMVC</servlet-name>
 		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
@@ -55,6 +55,7 @@
 			<param-name>contextConfigLocation</param-name>
 			<param-value>classpath:applicationContext.xml</param-value>
 		</init-param>
+		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>SpringMVC</servlet-name>
