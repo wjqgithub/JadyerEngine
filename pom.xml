@@ -32,6 +32,7 @@
 		<apache.log4j.version>1.2.17</apache.log4j.version>
 		<apache.httpclient.version>4.2.1</apache.httpclient.version>
 		<google.guava.version>18.0</google.guava.version>
+		<google.guice.version>4.0</google.guice.version>
 		<alibaba.druid.version>1.0.15</alibaba.druid.version>
 		<alibaba.fastjson.version>1.2.7</alibaba.fastjson.version>
 		<jsp.jstl.version>1.2.1</jsp.jstl.version>
@@ -277,6 +278,11 @@
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>${google.guava.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.inject</groupId>
+			<artifactId>guice</artifactId>
+			<version>${google.guice.version}</version>
 		</dependency>
 
 		<!-- Alibaba -->
