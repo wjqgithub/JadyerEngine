@@ -97,7 +97,7 @@ public final class CodecUtil {
 	 * @param algorithm 指定生成哪种算法的密钥
 	 * @throws DecoderException 
 	 */
-	public static String initKey(String algorithm) throws DecoderException{
+	public static String initKey(String algorithm){
 		if(ALGORITHM_AES_PKCS7.equals(algorithm)){
 			Security.addProvider(new BouncyCastleProvider());
 		}
