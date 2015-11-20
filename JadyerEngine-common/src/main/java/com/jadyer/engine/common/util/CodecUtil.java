@@ -94,11 +94,12 @@ public final class CodecUtil {
 	 * 初始化算法密钥
 	 * @see 目前algorithm参数可选值为AES,DES,DESede,输入其它值时会返回<code>""</code>空字符串
 	 * @see 若系统无法识别algorithm会导致实例化密钥生成器失败,此时也会返回<code>""</code>空字符串
-	 * @param algorithm 指定生成哪种算法的密钥
+	 * @param algorithm      指定生成哪种算法的密钥
+	 * @param isPKCS7Padding 是否采用PKCS7Padding填充方式(需要BouncyCastle支持)
 	 * @throws DecoderException 
 	 */
-	public static String initKey(String algorithm){
-		if(ALGORITHM_AES_PKCS7.equals(algorithm)){
+	public static String initKey(String algorithm, boolean isPKCS7Padding){
+		if(isPKCS7Padding){
 			Security.addProvider(new BouncyCastleProvider());
 		}
 		//实例化密钥生成器
@@ -124,7 +125,7 @@ public final class CodecUtil {
 		//生成密钥
 		SecretKey secretKey = kg.generateKey();
 		//获取二进制密钥编码形式
-		if(ALGORITHM_AES_PKCS7.equals(algorithm)){
+		if(isPKCS7Padding){
 			return Hex.encodeHexString(secretKey.getEncoded());
 		}
 		return Base64.encodeBase64URLSafeString(secretKey.getEncoded());
