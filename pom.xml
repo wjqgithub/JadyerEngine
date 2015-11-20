@@ -42,6 +42,7 @@
 		<jsch.version>0.1.53</jsch.version>
 		<jcifs.version>1.3.17</jcifs.version>
 		<quartz.version>2.2.1</quartz.version>
+		<bouncycastle.version>1.53</bouncycastle.version>
 	</properties>
 
 	<dependencyManagement>
@@ -355,6 +356,11 @@
 					<artifactId>slf4j-api</artifactId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>${bouncycastle.version}</version>
 		</dependency>
 	</dependencies>
 

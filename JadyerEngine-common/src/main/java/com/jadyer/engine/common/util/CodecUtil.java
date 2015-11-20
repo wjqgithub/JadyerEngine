@@ -1,9 +1,12 @@
 package com.jadyer.engine.common.util;
 
+import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -15,10 +18,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.DESedeKeySpec;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
  * 加解密工具类
@@ -37,7 +43,8 @@ import org.apache.commons.codec.binary.Hex;
  * @see 所以,经过Base64算法编码后,每个字节的最大值都不会超过64
  * @see 最后,Base64算法会查询它自己定制的码表,该码表记录的是0--63所对应键盘上的明文字符,最后将其返回
  * @see -----------------------------------------------------------------------------------------------------------
- * @version v1.3
+ * @version v1.4
+ * @history v1.4-->增加AES-PKCS7算法加解密数据的方法
  * @history v1.3-->增加buildHMacSign()的签名方法,目前支持<code>HMacSHA1,HMacSHA256,HMacSHA512,HMacMD5</code>算法
  * @history v1.2-->修改buildHexSign()方法,取消用于置顶返回字符串大小写的第四个参数,修改后默认返回大写字符串
  * @history v1.1-->增加AES,DES,DESede等算法的加解密方法
@@ -49,23 +56,51 @@ import org.apache.commons.codec.binary.Hex;
 public final class CodecUtil {
 	//密钥算法
 	public static final String ALGORITHM_AES = "AES";
+	public static final String ALGORITHM_AES_PKCS7 = "AES";
 	public static final String ALGORITHM_DES = "DES";
 	public static final String ALGORITHM_DESede = "DESede";
 	//加解密算法/工作模式/填充方式,Java6.0支持PKCS5Padding填充方式,BouncyCastle支持PKCS7Padding填充方式
 	//工作模式有四种-->>ECB：电子密码本模式,CBC：加密分组链接模式,CFB：加密反馈模式,OFB：输出反馈模式
 	private static final String ALGORITHM_CIPHER_AES = "AES/ECB/PKCS5Padding";
+	private static final String ALGORITHM_CIPHER_AES_PKCS7 = "AES/CBC/PKCS7Padding";
 	private static final String ALGORITHM_CIPHER_DES = "DES/ECB/PKCS5Padding";
 	private static final String ALGORITHM_CIPHER_DESede = "DESede/ECB/PKCS5Padding";
-	
+
 	private CodecUtil(){}
-	
+
+	/**
+	 * 生成AES/CBC/PKCS7Padding专用的IV
+	 * @see ECB模式只用密钥即可对数据进行加解密,CBC模式需要添加一个参数IV
+	 * @see IV是一个16字节的数组,这里采用和IOS一样的构造方法,数据全为0
+	 * @create Nov 20, 2015 9:29:39 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	private static AlgorithmParameters initIV(){
+		byte[] iv = new byte[16];
+		Arrays.fill(iv, (byte)0x00);
+		AlgorithmParameters params;
+		try {
+			params = AlgorithmParameters.getInstance(ALGORITHM_AES_PKCS7);  
+			params.init(new IvParameterSpec(iv));
+		} catch (Exception e) {
+			LogUtil.getLogger().error("生成AES/CBC/PKCS7Padding专用的IV时失败,堆栈轨迹如下", e);
+			return null;
+		}
+		return params;
+	}
+
+
 	/**
 	 * 初始化算法密钥
 	 * @see 目前algorithm参数可选值为AES,DES,DESede,输入其它值时会返回<code>""</code>空字符串
 	 * @see 若系统无法识别algorithm会导致实例化密钥生成器失败,此时也会返回<code>""</code>空字符串
 	 * @param algorithm 指定生成哪种算法的密钥
+	 * @throws DecoderException 
 	 */
-	public static String initKey(String algorithm){
+	public static String initKey(String algorithm) throws DecoderException{
+		if(ALGORITHM_AES_PKCS7.equals(algorithm)){
+			Security.addProvider(new BouncyCastleProvider());
+		}
 		//实例化密钥生成器
 		KeyGenerator kg = null;
 		try {
@@ -77,6 +112,8 @@ public final class CodecUtil {
 		//初始化密钥生成器:AES要求密钥长度为128,192,256位
 		if(ALGORITHM_AES.equals(algorithm)){
 			kg.init(128);
+		}else if(ALGORITHM_AES_PKCS7.equals(algorithm)){
+			kg.init(128);
 		}else if(ALGORITHM_DES.equals(algorithm)){
 			kg.init(56);
 		}else if(ALGORITHM_DESede.equals(algorithm)){
@@ -87,10 +124,13 @@ public final class CodecUtil {
 		//生成密钥
 		SecretKey secretKey = kg.generateKey();
 		//获取二进制密钥编码形式
+		if(ALGORITHM_AES_PKCS7.equals(algorithm)){
+			return Hex.encodeHexString(secretKey.getEncoded());
+		}
 		return Base64.encodeBase64URLSafeString(secretKey.getEncoded());
 	}
-	
-	
+
+
 	/**
 	 * AES算法加密数据
 	 * @param data 待加密数据
@@ -111,8 +151,8 @@ public final class CodecUtil {
 			return "";
 		}
 	}
-	
-	
+
+
 	/**
 	 * AES算法解密数据 
 	 * @param data 待解密数据
@@ -125,12 +165,54 @@ public final class CodecUtil {
 			cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Base64.decodeBase64(key), ALGORITHM_AES));
 			return new String(cipher.doFinal(Base64.decodeBase64(data)));
 		}catch(Exception e){
+			e.printStackTrace();
 			LogUtil.getLogger().error("解密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
 			return "";
 		}
 	}
-	
-	
+
+
+	/**
+	 * AES-PKCS7算法加密数据
+	 * @see 兼容IOS中的SecKeyWrapper加解密(SecKeyWrapper采用的是PKCS7Padding填充方式)
+	 * @param data 待加密数据
+	 * @param key  密钥
+	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则返回<code>""</code>空字符串
+	 * */
+	public static String buildAESPKCS7Encrypt(String data, String key){
+		Security.addProvider(new BouncyCastleProvider());
+		try{
+			SecretKey secretKey = new SecretKeySpec(Hex.decodeHex(key.toCharArray()), ALGORITHM_AES_PKCS7);
+			Cipher cipher = Cipher.getInstance(ALGORITHM_CIPHER_AES_PKCS7);
+			cipher.init(Cipher.ENCRYPT_MODE, secretKey, initIV());
+			return Hex.encodeHexString(cipher.doFinal(data.getBytes()));
+		}catch(Exception e){
+			LogUtil.getLogger().error("加密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
+			return "";
+		}
+	}
+
+
+	/**
+	 * AES-PKCS7算法解密数据 
+	 * @see 兼容IOS中的SecKeyWrapper加解密(SecKeyWrapper采用的是PKCS7Padding填充方式)
+	 * @param data 待解密数据
+	 * @param key  密钥
+	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则返回<code>""</code>空字符串
+	 * */
+	public static String buildAESPKCS7Decrypt(String data, String key){
+		try {
+			SecretKey secretKey = new SecretKeySpec(Hex.decodeHex(key.toCharArray()), ALGORITHM_AES_PKCS7);
+			Cipher cipher = Cipher.getInstance(ALGORITHM_CIPHER_AES_PKCS7);
+			cipher.init(Cipher.DECRYPT_MODE, secretKey, initIV());
+			return new String(cipher.doFinal(Hex.decodeHex(data.toCharArray())));
+		}catch(Exception e){
+			LogUtil.getLogger().error("解密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
+			return "";
+		}
+	}
+
+
 	/**
 	 * DES算法加密数据
 	 * @param data 待加密数据
@@ -149,8 +231,8 @@ public final class CodecUtil {
 			return "";
 		}
 	}
-	
-	
+
+
 	/**
 	 * DES算法解密数据 
 	 * @param data 待解密数据
@@ -169,8 +251,8 @@ public final class CodecUtil {
 			return "";
 		}
 	}
-	
-	
+
+
 	/**
 	 * DESede算法加密数据
 	 * @param data 待加密数据
@@ -190,7 +272,7 @@ public final class CodecUtil {
 		}
 	}
 
-	
+
 	/**
 	 * DESede算法解密数据 
 	 * @param data 待解密数据
@@ -209,8 +291,8 @@ public final class CodecUtil {
 			return "";
 		}
 	}
-	
-	
+
+
 	/**
 	 * Hmac签名
 	 * @see Calculates the algorithm digest and returns the value as a hex string
@@ -237,8 +319,8 @@ public final class CodecUtil {
 		}
 		return Hex.encodeHexString(mac.doFinal(data.getBytes()));
 	}
-	
-	
+
+
 	/**
 	 * 根据指定的签名密钥和算法签名Map<String,String>
 	 * @see 方法内部首先会过滤Map<String,String>参数中的部分键值对
@@ -266,8 +348,8 @@ public final class CodecUtil {
 		sb.append("key=").append(signKey);
 		return buildHexSign(sb.toString(), charset, algorithm);
 	}
-	
-	
+
+
 	/**
 	 * 通过指定算法签名字符串
 	 * @see Calculates the algorithm digest and returns the value as a hex string
