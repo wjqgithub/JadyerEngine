@@ -166,7 +166,6 @@ public final class CodecUtil {
 			cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Base64.decodeBase64(key), ALGORITHM_AES));
 			return new String(cipher.doFinal(Base64.decodeBase64(data)));
 		}catch(Exception e){
-			e.printStackTrace();
 			LogUtil.getLogger().error("解密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
 			return "";
 		}
