@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,13 +67,15 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
  * 玄玉的开发工具类
- * @version v3.3
- * @version v3.3-->增加isAjaxRequest()用于判断是否为Ajax请求的方法
- * @version v3.2-->增加getCurrentWeekStartDate()和getCurrentWeekEndDate()用于获取本周开始和结束的时间
+ * @version v3.4
+ * @history v3.4-->增加extractHttpServletRequestMessage用于提取HTTP请求完整报文的两个方法
+ * @history v3.3-->增加isAjaxRequest()用于判断是否为Ajax请求的方法
+ * @history v3.2-->增加getCurrentWeekStartDate()和getCurrentWeekEndDate()用于获取本周开始和结束的时间
  * @history v3.1-->修改<code>captureScreen()</code>方法增加是否自动打开生成的抓屏图片的功能
  * @history v3.0-->修改<code>htmlEscape()</code>方法名为<code>escapeHtml()</code>,并新增<code>escapeXml</code>方法
  * @history v2.9-->新增<code>getIncreaseDate()</code>用于计算指定日期相隔一定天数后的日期
@@ -905,8 +908,56 @@ public final class JadyerUtil {
 			pw.close();
 		}
 	}
-	
-	
+
+
+	/**
+	 * 提取收到的HttpServletRequest请求报文头消息
+	 * @see 该方法默认使用了UTF-8解析请求消息
+	 * @see 解析过程中发生异常时会抛出RuntimeException
+	 * @create Nov 28, 2015 4:12:19 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	public static String extractHttpServletRequestHeaderMessage(HttpServletRequest request){
+		StringBuilder sb = new StringBuilder();
+		sb.append(request.getMethod()).append(" ").append(request.getRequestURI() + (null==request.getQueryString()?"":"?"+request.getQueryString())).append(" ").append(request.getProtocol()).append("\n");
+		for(Enumeration<String> obj = request.getHeaderNames(); obj.hasMoreElements();){
+			sb.append(obj.nextElement()).append(": ").append(request.getHeader(obj.nextElement())).append("\n");
+		}
+		return sb.toString();
+	}
+
+
+	/**
+	 * 提取收到的HttpServletRequest请求报文体消息
+	 * @see 该方法默认使用了UTF-8解析请求消息
+	 * @see 解析过程中发生异常时会抛出RuntimeException
+	 * @create Nov 28, 2015 4:12:19 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	public static String extractHttpServletRequestBodyMessage(HttpServletRequest request){
+		try{
+			request.setCharacterEncoding("UTF-8");
+		}catch(UnsupportedEncodingException e1){
+			//ignore
+		}
+		StringBuilder sb = new StringBuilder();
+		BufferedReader br = null;
+		try{
+			br = request.getReader();
+			for(String line=null; (line=br.readLine())!=null;){
+				sb.append(line).append("\n");
+			}
+		}catch(IOException e){
+			throw new RuntimeException(e);
+		}finally {
+			if(null != br){
+				IOUtils.closeQuietly(br);
+			}
+		}
+		return sb.toString();
+	}
+
+
 	/**
 	 * 统计代码行数
 	 * @see 1)目前仅支持*.java;*.xml;*.properties;*.jsp;*.htm;*.html六种文件格式
