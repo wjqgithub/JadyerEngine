@@ -920,8 +920,10 @@ public final class JadyerUtil {
 	public static String extractHttpServletRequestHeaderMessage(HttpServletRequest request){
 		StringBuilder sb = new StringBuilder();
 		sb.append(request.getMethod()).append(" ").append(request.getRequestURI() + (null==request.getQueryString()?"":"?"+request.getQueryString())).append(" ").append(request.getProtocol()).append("\n");
+		String headerName = null;
 		for(Enumeration<String> obj = request.getHeaderNames(); obj.hasMoreElements();){
-			sb.append(obj.nextElement()).append(": ").append(request.getHeader(obj.nextElement())).append("\n");
+			headerName = obj.nextElement();
+			sb.append(headerName).append(": ").append(request.getHeader(headerName)).append("\n");
 		}
 		return sb.toString();
 	}
