@@ -26,6 +26,7 @@ import com.jadyer.engine.common.util.ValidatorUtil;
  * 日志记录和表单验证的切面器
  * @see 1.记录Controller方法被调用的入参出参和耗时信息
  * @see 2.通过JSR303注解进行表单验证
+ * @see 3.测试发现它会切@Controller注解的类,但不会切@RestController注解的类
  * @see http://blog.csdn.net/u012228718/article/details/41730799比较详细的介绍了ServletListener
  * @create Apr 18, 2015 9:49:12 AM
  * @author 玄玉<http://blog.csdn.net/jadyer>
@@ -77,7 +78,7 @@ public class LogAndFormAspect {
 			returnInfo = "ResponseEntity";
 		}else{
 			//returnInfo = com.alibaba.fastjson.JSON.toJSONString(respData, true);
-			returnInfo = JSON.toJSONStringWithDateFormat(respData, "yyyy-MM-dd HH:mm:ss", SerializerFeature.PrettyFormat, SerializerFeature.WriteMapNullValue, SerializerFeature.WriteNullStringAsEmpty, SerializerFeature.WriteNullNumberAsZero, SerializerFeature.WriteNullListAsEmpty, SerializerFeature.WriteNullBooleanAsFalse);
+			returnInfo = JSON.toJSONStringWithDateFormat(respData, JSON.DEFFAULT_DATE_FORMAT, SerializerFeature.PrettyFormat, SerializerFeature.WriteMapNullValue, SerializerFeature.WriteNullStringAsEmpty, SerializerFeature.WriteNullNumberAsZero, SerializerFeature.WriteNullListAsEmpty, SerializerFeature.WriteNullBooleanAsFalse);
 		}
 		LogUtil.getLogger().info(methodInfo + "()被调用, 出参为" + returnInfo + ", Duration[" + (endTime-startTime) + "]ms");
 		LogUtil.getLogger().info("---------------------------------------------------------------------------------------------");
