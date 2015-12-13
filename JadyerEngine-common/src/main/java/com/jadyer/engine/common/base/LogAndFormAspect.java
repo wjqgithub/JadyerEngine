@@ -24,9 +24,9 @@ import com.jadyer.engine.common.util.ValidatorUtil;
 
 /**
  * 日志记录和表单验证的切面器
- * @see 1.记录Controller方法被调用的入参出参和耗时信息
- * @see 2.通过JSR303注解进行表单验证
- * @see 3.测试发现它会切@Controller注解的类,但不会切@RestController注解的类
+ * @see 1.通过JSR303注解进行表单验证
+ * @see 2.记录Controller方法被调用的入参出参和耗时信息
+ * @see 3.测试发现它所切的方法应该是public的,所以如果某个方法不想被切就可以不适用修饰符去掉public
  * @see http://blog.csdn.net/u012228718/article/details/41730799比较详细的介绍了ServletListener
  * @create Apr 18, 2015 9:49:12 AM
  * @author 玄玉<http://blog.csdn.net/jadyer>
@@ -34,7 +34,7 @@ import com.jadyer.engine.common.util.ValidatorUtil;
 @Aspect
 @Component
 public class LogAndFormAspect {
-	@Around("execution(* com.jadyer.engine..*.*Controller.*(..))")
+	@Around("execution(* com.jadyer.engine..*Controller.*(..))")
 	public Object process(ProceedingJoinPoint joinPoint) throws Throwable {
 		Object respData = null;
 		long startTime = System.currentTimeMillis();
