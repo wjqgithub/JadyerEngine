@@ -12,6 +12,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import org.junit.Test;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.jadyer.engine.web.user.User;
 
@@ -249,6 +250,15 @@ public class FastjsonTest {
 	}
 
 
+	@Test
+	public void keyTest(){
+		String data = "{\"SERVICE\":{\"SERVICE_HEADER\":{\"SERVICE_ID\":\"obtainAppNo\",\"ORG\":\"000000000001\",\"CHANNEL_ID\":\"BANK\",\"ACQ_ID\":\"10000000\",\"SUB_TERMINAL_TYPE\":\"Web\",\"SERVICESN\":\"BAIDU20151216224602780\",\"REQUEST_TIME\":\"20151216224602\",\"VERSION_ID\":\"01\",\"SERV_RESPONSE\":{\"STATUS\":\"S\",\"CODE\":\"0000\",\"DESC\":\"????\"}},\"SERVICE_BODY\":{\"RESPONSE\":{\"APP_NO\":\"20151216220000006553\"}}}}";
+		Map<String, Map<String, Map<String, String>>> dataMap = JSON.parseObject(data, new TypeReference<Map<String, Map<String, Map<String, String>>>>(){});
+		System.out.println(dataMap.get("SERVICE").get("SERVICE_HEADER").get("SERV_RESPONSE"));
+		System.out.println(dataMap.get("SERVICE").get("SERVICE_BODY").get("RESPONSE"));
+		System.out.println(JSONObject.parseObject(dataMap.get("SERVICE").get("SERVICE_HEADER").get("SERV_RESPONSE")).get("CODE"));
+		System.out.println(JSONObject.parseObject(dataMap.get("SERVICE").get("SERVICE_BODY").get("RESPONSE")).get("APP_NO"));
+	}
 //	/**
 //	 * 一个关于Jackson序列化与反序列化Map里面包含普通对象和List的JSON
 //	 * @create Sep 26, 2015 10:58:07 PM
