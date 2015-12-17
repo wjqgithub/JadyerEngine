@@ -72,7 +72,8 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * 玄玉的开发工具类
- * @version v3.4
+ * @version v3.5
+ * @history v3.5-->增加requestToBean()用于将HttpServletRequest参数值转为JavaBean的方法
  * @history v3.4-->增加extractHttpServletRequestMessage用于提取HTTP请求完整报文的两个方法
  * @history v3.3-->增加isAjaxRequest()用于判断是否为Ajax请求的方法
  * @history v3.2-->增加getCurrentWeekStartDate()和getCurrentWeekEndDate()用于获取本周开始和结束的时间
@@ -382,6 +383,34 @@ public final class JadyerUtil {
 			return true;
 		}else{
 			return false;
+		}
+	}
+
+
+	/**
+	 * HttpServletRequest参数值转为JavaBean
+	 * @see 该方法目前只能处理所有属性均为String的JavaBean
+	 * @create Dec 17, 2015 4:44:47 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	public static <T> T requestToBean(HttpServletRequest request, Class<T> beanClass){
+		try{
+			T bean = beanClass.newInstance();
+			//getFields()能获取到父类和子类中所有public的属性
+			for(Field field : beanClass.getDeclaredFields()){
+				//构造setter方法
+				String methodName = "set" + StringUtils.capitalize(field.getName());
+				try{
+					//执行setter方法
+					beanClass.getMethod(methodName, String.class).invoke(bean, request.getParameter(field.getName()));
+				}catch(Exception e){
+					//ignore exception
+					continue;
+				}
+			}
+			return bean;
+		}catch(Exception e){
+			throw new RuntimeException(e);
 		}
 	}
 
