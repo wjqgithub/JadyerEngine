@@ -389,7 +389,7 @@ public final class JadyerUtil {
 
 	/**
 	 * HttpServletRequest参数值转为JavaBean
-	 * @see 该方法目前只能处理所有属性均为String的JavaBean
+	 * @see 该方法目前只能处理所有属性均为String的JavaBean,且只能处理当前类,暂不能处理父类和子类
 	 * @create Dec 17, 2015 4:44:47 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
