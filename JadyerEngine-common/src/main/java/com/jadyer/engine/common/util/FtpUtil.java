@@ -271,6 +271,7 @@ public final class FtpUtil {
 		try{
 			FTPFile[] files = ftpClient.listFiles(new String(remoteURL.getBytes(DEFAULT_CHARSET), "ISO-8859-1"));
 			if(1 != files.length){
+				logout();
 				throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "远程文件不存在");
 			}
 			return ftpClient.retrieveFileStream(remoteURL);
