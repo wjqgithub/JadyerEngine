@@ -38,13 +38,14 @@ import com.jcraft.jsch.SftpProgressMonitor;
  * @see 3.Connection closed without indication.
  * @see   这个错误的原因就是FTP服务器端发生故障或者网络出现问题
  * @see -----------------------------------------------------------------------------------------------------------
- * @version v2.0
+ * @version v2.1
+ * @history v2.1-->FTP文件下载后增加传输成功与否的校验,否则会导致同一FTP连接下载第二个文件时找不到文件
  * @history v2.0-->增加JSch实现的SFTP上传和下载等静态方法
  * @history v1.3-->增加FTP传输进度显示[    0%   101890  33KB/s  58351458   3s]
  * @history v1.2-->增加防止重复登录FTP的判定以及上传和下载文件时支持断点续传的备用注释代码
  * @history v1.1-->增加<code>deleteFileAndLogout(String, String, String, String)<code>删除FTP文件的方法
  * @history v1.0-->新建并提供了上传和下载文件的方法,以及操作完成后自动logout并释放连接
- * @update Oct 22, 2015 10:04:37 AM
+ * @update Dec 22, 2015 6:45:34 PM
  * @create 2015-6-22 上午11:22:34
  * @author 玄玉<http://blog.csdn.net/jadyer>
  */
