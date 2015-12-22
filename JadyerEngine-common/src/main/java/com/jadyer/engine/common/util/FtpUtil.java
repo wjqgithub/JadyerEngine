@@ -258,6 +258,7 @@ public final class FtpUtil {
 	/**
 	 * 文件下载
 	 * @see 文件下载失败时,该方法会自动登出服务器并释放FTP连接,然后抛出RuntimeException
+	 * @see 读取文件流后,一定要调用completePendingCommand()告诉FTP传输完毕,否则会导致该FTP连接在下一次读取不到文件
 	 * @param hostname  目标主机地址
 	 * @param username  FTP登录用户
 	 * @param password  FTP登录密码
@@ -274,7 +275,13 @@ public final class FtpUtil {
 				logout();
 				throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "远程文件不存在");
 			}
-			return ftpClient.retrieveFileStream(remoteURL);
+			InputStream is = ftpClient.retrieveFileStream(remoteURL);
+			if(!ftpClient.completePendingCommand()){
+				IOUtils.closeQuietly(is);
+				logout();
+				throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "File transfer failed.");
+			}
+			return is;
 		}catch(IOException e){
 			logout();
 			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "从FTP服务器["+hostname+"]下载文件["+remoteURL+"]失败", e);
@@ -302,6 +309,9 @@ public final class FtpUtil {
 				throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "远程文件不存在");
 			}
 			FileUtils.copyInputStreamToFile(ftpClient.retrieveFileStream(remoteURL), new File(localURL));
+			if(!ftpClient.completePendingCommand()){
+				throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "File transfer failed.");
+			}
 		}catch(IOException e){
 			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "从FTP服务器["+hostname+"]下载文件["+remoteURL+"]失败", e);
 		}finally{
