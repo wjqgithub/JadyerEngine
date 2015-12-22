@@ -101,7 +101,7 @@ public final class FtpUtil {
 			}
 			return false;
 		}
-		LogUtil.getLogger().info("FTP服务器["+hostname+"]连接成功...");
+		LogUtil.getLogger().debug("FTP服务器["+hostname+"]连接成功...");
 		boolean isLoginSuccess = false;
 		try {
 			isLoginSuccess = ftpClient.login(username, password);
@@ -116,9 +116,9 @@ public final class FtpUtil {
 		}
 		try {
 			if(isLoginSuccess){
-				LogUtil.getLogger().info("FTP服务器["+hostname+"]登录成功...当前所在目录为" + ftpClient.printWorkingDirectory());
+				LogUtil.getLogger().debug("FTP服务器["+hostname+"]登录成功...当前所在目录为" + ftpClient.printWorkingDirectory());
 			}else{
-				LogUtil.getLogger().info("FTP服务器["+hostname+"]登录失败...");
+				LogUtil.getLogger().error("FTP服务器["+hostname+"]登录失败...");
 				return false;
 			}
 			//设置文件传输类型
@@ -165,16 +165,16 @@ public final class FtpUtil {
 			String ftpRemoteAddress = ftpClient.getRemoteAddress().toString();
 			try{
 				ftpClient.logout();
-				LogUtil.getLogger().info("FTP服务器[" + ftpRemoteAddress + "]登出成功...");
+				LogUtil.getLogger().debug("FTP服务器[" + ftpRemoteAddress + "]登出成功...");
 			}catch (IOException e){
-				LogUtil.getLogger().info("FTP服务器[" + ftpRemoteAddress + "]登出时发生异常,堆栈轨迹如下", e);
+				LogUtil.getLogger().warn("FTP服务器[" + ftpRemoteAddress + "]登出时发生异常,堆栈轨迹如下", e);
 			}finally{
 				if(null!=ftpClient && ftpClient.isConnected()){
 					try {
 						ftpClient.disconnect();
-						LogUtil.getLogger().info("FTP服务器[" + ftpRemoteAddress + "]连接释放完毕...");
+						LogUtil.getLogger().debug("FTP服务器[" + ftpRemoteAddress + "]连接释放完毕...");
 					} catch (IOException ioe) {
-						LogUtil.getLogger().info("FTP服务器[" + ftpRemoteAddress + "]连接释放时发生异常,堆栈轨迹如下", ioe);
+						LogUtil.getLogger().warn("FTP服务器[" + ftpRemoteAddress + "]连接释放时发生异常,堆栈轨迹如下", ioe);
 					}
 				}
 			}
