@@ -404,7 +404,7 @@ public final class JadyerUtil {
 				String methodName = "set" + StringUtils.capitalize(field.getName());
 				try{
 					//执行setter方法
-					beanClass.getMethod(methodName, String.class).invoke(bean, request.getParameter(field.getName()));
+					beanClass.getMethod(methodName, String.class).invoke(bean, URLDecode(request.getParameter(field.getName())));
 				}catch(Exception e){
 					//ignore exception
 					continue;
