@@ -54,6 +54,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @author 玄玉<http://blog.csdn.net/jadyer>
  */
 public final class CodecUtil {
+	public static final String CHARSET = "UTF-8";
 	//密钥算法
 	public static final String ALGORITHM_AES = "AES";
 	public static final String ALGORITHM_AES_PKCS7 = "AES";
@@ -146,7 +147,7 @@ public final class CodecUtil {
 			cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(Base64.decodeBase64(key), ALGORITHM_AES));
 			//执行加密操作,加密后的结果通常都会用Base64编码进行传输
 			//将Base64中的URL非法字符如'+','/','='转为其他字符,详见RFC3548
-			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes()));
+			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
 		}catch(Exception e){
 			LogUtil.getLogger().error("加密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
 			return "";
@@ -185,7 +186,7 @@ public final class CodecUtil {
 			SecretKey secretKey = new SecretKeySpec(Hex.decodeHex(key.toCharArray()), ALGORITHM_AES_PKCS7);
 			Cipher cipher = Cipher.getInstance(ALGORITHM_CIPHER_AES_PKCS7);
 			cipher.init(Cipher.ENCRYPT_MODE, secretKey, initIV());
-			return Hex.encodeHexString(cipher.doFinal(data.getBytes()));
+			return Hex.encodeHexString(cipher.doFinal(data.getBytes(CHARSET)));
 		}catch(Exception e){
 			LogUtil.getLogger().error("加密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
 			return "";
@@ -225,7 +226,7 @@ public final class CodecUtil {
 			SecretKey secretKey = SecretKeyFactory.getInstance(ALGORITHM_DES).generateSecret(dks);
 			Cipher cipher = Cipher.getInstance(ALGORITHM_CIPHER_DES);
 			cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes()));
+			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
 		}catch(Exception e){
 			LogUtil.getLogger().error("加密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
 			return "";
@@ -265,7 +266,7 @@ public final class CodecUtil {
 			SecretKey secretKey = SecretKeyFactory.getInstance(ALGORITHM_DESede).generateSecret(dks);
 			Cipher cipher = Cipher.getInstance(ALGORITHM_CIPHER_DESede);
 			cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes()));
+			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
 		}catch(Exception e){
 			LogUtil.getLogger().error("加密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
 			return "";
@@ -317,7 +318,7 @@ public final class CodecUtil {
 			LogUtil.getLogger().error("签名字符串[" + data + "]时发生异常:System doesn't support this algorithm[" + algorithm + "]");
 			return "";
 		}
-		return Hex.encodeHexString(mac.doFinal(data.getBytes()));
+		return Hex.encodeHexString(mac.doFinal(JadyerUtil.getBytes(data, CHARSET)));
 	}
 
 
