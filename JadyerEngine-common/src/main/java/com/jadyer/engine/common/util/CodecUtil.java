@@ -165,7 +165,7 @@ public final class CodecUtil {
 		try {
 			Cipher cipher = Cipher.getInstance(ALGORITHM_CIPHER_AES);
 			cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Base64.decodeBase64(key), ALGORITHM_AES));
-			return new String(cipher.doFinal(Base64.decodeBase64(data)));
+			return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
 		}catch(Exception e){
 			LogUtil.getLogger().error("解密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
 			return "";
@@ -206,7 +206,7 @@ public final class CodecUtil {
 			SecretKey secretKey = new SecretKeySpec(Hex.decodeHex(key.toCharArray()), ALGORITHM_AES_PKCS7);
 			Cipher cipher = Cipher.getInstance(ALGORITHM_CIPHER_AES_PKCS7);
 			cipher.init(Cipher.DECRYPT_MODE, secretKey, initIV());
-			return new String(cipher.doFinal(Hex.decodeHex(data.toCharArray())));
+			return new String(cipher.doFinal(Hex.decodeHex(data.toCharArray())), CHARSET);
 		}catch(Exception e){
 			LogUtil.getLogger().error("解密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
 			return "";
@@ -246,7 +246,7 @@ public final class CodecUtil {
 			SecretKey secretKey = SecretKeyFactory.getInstance(ALGORITHM_DES).generateSecret(dks);
 			Cipher cipher = Cipher.getInstance(ALGORITHM_CIPHER_DES);
 			cipher.init(Cipher.DECRYPT_MODE, secretKey);
-			return new String(cipher.doFinal(Base64.decodeBase64(data)));
+			return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
 		}catch(Exception e){
 			LogUtil.getLogger().error("解密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
 			return "";
@@ -286,7 +286,7 @@ public final class CodecUtil {
 			SecretKey secretKey = SecretKeyFactory.getInstance(ALGORITHM_DESede).generateSecret(dks);
 			Cipher cipher = Cipher.getInstance(ALGORITHM_CIPHER_DESede);
 			cipher.init(Cipher.DECRYPT_MODE, secretKey);
-			return new String(cipher.doFinal(Base64.decodeBase64(data)));
+			return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
 		}catch(Exception e){
 			LogUtil.getLogger().error("解密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
 			return "";
