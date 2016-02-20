@@ -2,12 +2,22 @@ package com.jadyer.engine.common.util;
 
 import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.Security;
+import java.security.Signature;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +53,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @see 所以,经过Base64算法编码后,每个字节的最大值都不会超过64
  * @see 最后,Base64算法会查询它自己定制的码表,该码表记录的是0--63所对应键盘上的明文字符,最后将其返回
  * @see -----------------------------------------------------------------------------------------------------------
- * @version v1.4
+ * @version v1.5
+ * @history v1.5-->增加RSA算法加解密及签名验签的方法
  * @history v1.4-->增加AES-PKCS7算法加解密数据的方法
  * @history v1.3-->增加buildHMacSign()的签名方法,目前支持<code>HMacSHA1,HMacSHA256,HMacSHA512,HMacMD5</code>算法
  * @history v1.2-->修改buildHexSign()方法,取消用于置顶返回字符串大小写的第四个参数,修改后默认返回大写字符串
@@ -56,12 +67,15 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 public final class CodecUtil {
 	public static final String CHARSET = "UTF-8";
 	//密钥算法
+	public static final String ALGORITHM_RSA = "RSA";
+	public static final String ALGORITHM_RSA_SIGN = "SHA256WithRSA";
 	public static final String ALGORITHM_AES = "AES";
 	public static final String ALGORITHM_AES_PKCS7 = "AES";
 	public static final String ALGORITHM_DES = "DES";
 	public static final String ALGORITHM_DESede = "DESede";
 	//加解密算法/工作模式/填充方式,Java6.0支持PKCS5Padding填充方式,BouncyCastle支持PKCS7Padding填充方式
-	//工作模式有四种-->>ECB：电子密码本模式,CBC：加密分组链接模式,CFB：加密反馈模式,OFB：输出反馈模式
+	//工作模式有四种,ECB--电子密码本模式,CBC--加密分组链接模式,CFB--加密反馈模式,OFB--输出反馈模式
+	//其中CBC模式是最安全的,也是唯一推荐使用的,http://blog.zheezes.com/java-aes-encryption-uses-and-principles.html
 	private static final String ALGORITHM_CIPHER_AES = "AES/ECB/PKCS5Padding";
 	private static final String ALGORITHM_CIPHER_AES_PKCS7 = "AES/CBC/PKCS7Padding";
 	private static final String ALGORITHM_CIPHER_DES = "DES/ECB/PKCS5Padding";
@@ -84,8 +98,7 @@ public final class CodecUtil {
 			params = AlgorithmParameters.getInstance(ALGORITHM_AES_PKCS7);  
 			params.init(new IvParameterSpec(iv));
 		} catch (Exception e) {
-			LogUtil.getLogger().error("生成AES/CBC/PKCS7Padding专用的IV时失败,堆栈轨迹如下", e);
-			return null;
+			throw new IllegalArgumentException("生成AES/CBC/PKCS7Padding专用的IV时失败", e);
 		}
 		return params;
 	}
@@ -108,8 +121,7 @@ public final class CodecUtil {
 		try {
 			kg = KeyGenerator.getInstance(algorithm);
 		} catch (NoSuchAlgorithmException e) {
-			LogUtil.getLogger().error("实例化密钥生成器失败,系统不支持给定的[" + algorithm + "]算法,堆栈轨迹如下", e);
-			return "";
+			throw new IllegalArgumentException("No such algorithm-->[" + algorithm + "]");
 		}
 		//初始化密钥生成器:AES要求密钥长度为128,192,256位
 		if(ALGORITHM_AES.equals(algorithm)){
@@ -121,7 +133,7 @@ public final class CodecUtil {
 		}else if(ALGORITHM_DESede.equals(algorithm)){
 			kg.init(168);
 		}else{
-			return "";
+			throw new IllegalArgumentException("Not supported algorithm-->[" + algorithm + "]");
 		}
 		//生成密钥
 		SecretKey secretKey = kg.generateKey();
@@ -134,10 +146,187 @@ public final class CodecUtil {
 
 
 	/**
+	 * 初始化RSA算法密钥对
+	 * @param keysize RSA1024已经不安全了,起码要2048
+	 * @return 含公私钥的Map,键分别为publicKey和privateKey
+	 * @create Feb 20, 2016 7:34:41 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	public static Map<String, String> initRSAKey(int keysize){
+//		//RSA算法要求有一个可信任的随机数源
+//		SecureRandom sr = new SecureRandom();
+		//为RSA算法创建一个KeyPairGenerator对象
+		KeyPairGenerator kpg;
+		try{
+			kpg = KeyPairGenerator.getInstance(ALGORITHM_RSA);
+		}catch(NoSuchAlgorithmException e){
+			throw new IllegalArgumentException("No such algorithm-->[" + ALGORITHM_RSA + "]");
+		}
+//		//利用上面的随机数据源初始化这个KeyPairGenerator对象
+//		kpg.initialize(keysize, sr);
+		//生成密匙对
+		KeyPair keyPair = kpg.generateKeyPair();
+		//得到公钥
+		Key publicKey = keyPair.getPublic();
+		String publicKeyStr = Base64.encodeBase64String(publicKey.getEncoded());
+		//得到私钥
+		Key privateKey = keyPair.getPrivate();
+		String privateKeyStr = Base64.encodeBase64String(privateKey.getEncoded());
+		Map<String, String> keyPairMap = new HashMap<String, String>();
+		keyPairMap.put("publicKey", publicKeyStr);
+		keyPairMap.put("privateKey", privateKeyStr);
+		return keyPairMap;
+	}
+
+
+	/**
+	 * RSA算法私钥加密数据
+	 * @param data 待加密数据
+	 * @param key  RSA私钥字符串
+	 * @create Feb 20, 2016 8:03:25 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	public static String buildRSAEncryptByPrivateKey(String data, String key){
+		try{
+			//获得私钥对象
+			PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(Base64.decodeBase64(key));
+			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
+			Key privateKey = keyFactory.generatePrivate(pkcs8KeySpec);
+			//encrypt
+			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
+			cipher.init(Cipher.ENCRYPT_MODE, privateKey);
+			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
+		}catch(Exception e){
+			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
+		}
+	}
+
+
+	/**
+	 * RSA算法公钥加密数据
+	 * @param data 待加密数据
+	 * @param key  RSA公钥字符串
+	 * @create Feb 20, 2016 8:25:21 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	public static String buildRSAEncryptByPublicKey(String data, String key){
+		try{
+			//获得公钥对象
+			X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(Base64.decodeBase64(key));
+			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
+			Key publicKey = keyFactory.generatePublic(x509KeySpec);
+			//encrypt
+			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
+			cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+			//return Hex.encodeHexString(cipher.doFinal(data.getBytes(CHARSET)));
+			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
+		}catch(Exception e){
+			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
+		}
+	}
+
+
+	/**
+	 * RSA算法公钥解密数据
+	 * @param data 待解密数据
+	 * @param key  RSA公钥字符串
+	 * @create Feb 20, 2016 8:33:22 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	public static String buildRSADecryptByPublicKey(String data, String key){
+		try{
+			//获得公钥对象
+			X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(Base64.decodeBase64(key));
+			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
+			Key publicKey = keyFactory.generatePublic(x509KeySpec);
+			//decrypt
+			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
+			cipher.init(Cipher.DECRYPT_MODE, publicKey);
+			return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
+		}catch(Exception e){
+			throw new RuntimeException("解密字符串[" + data + "]时遇到异常", e);
+		}
+	}
+
+
+	/**
+	 * RSA算法私钥解密数据
+	 * @param data 待解密数据
+	 * @param key  RSA私钥字符串
+	 * @create Feb 20, 2016 8:33:22 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	public static String buildRSADecryptByPrivateKey(String data, String key){
+		try{
+			//获得私钥对象
+			PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(Base64.decodeBase64(key));
+			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
+			Key privateKey = keyFactory.generatePrivate(pkcs8KeySpec);
+			//decrypt
+			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
+			cipher.init(Cipher.DECRYPT_MODE, privateKey);
+			return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
+		}catch(Exception e){
+			throw new RuntimeException("解密字符串[" + data + "]时遇到异常", e);
+		}
+	}
+
+
+	/**
+	 * RSA算法使用私钥对数据生成数字签名
+	 * @see 注意签名算法SHA1WithRSA已被废弃,建议使用SHA256WithRSA
+	 * @param data 待签名数据
+	 * @param key  RSA私钥字符串
+	 * @create Feb 20, 2016 8:43:49 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	public static String buildRSASignByPrivateKey(String data, String key){
+		try{
+			//获得私钥对象
+			PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(Base64.decodeBase64(key));
+			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
+			PrivateKey privateKey = keyFactory.generatePrivate(pkcs8KeySpec);
+			//sign
+			Signature signature = Signature.getInstance(ALGORITHM_RSA_SIGN);
+			signature.initSign(privateKey);
+			signature.update(data.getBytes(CHARSET));
+			return Base64.encodeBase64URLSafeString(signature.sign());
+		}catch(Exception e){
+			throw new RuntimeException("签名字符串[" + data + "]时遇到异常", e);
+		}
+	}
+
+
+	/**
+	 * RSA算法使用公钥校验数字签名
+	 * @param data 签名的数据
+	 * @param key  RSA公钥字符串
+	 * @param sign 签名得到的字符串
+	 * @create Feb 20, 2016 8:51:49 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	public static boolean buildRSAverifyByPublicKey(String data, String key, String sign){
+		try{
+			//获得公钥对象
+			X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(Base64.decodeBase64(key));
+			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
+			PublicKey publicKey = keyFactory.generatePublic(x509KeySpec);
+			//verify
+			Signature signature = Signature.getInstance(ALGORITHM_RSA_SIGN);
+			signature.initVerify(publicKey);
+			signature.update(data.getBytes(CHARSET));
+			return signature.verify(Base64.decodeBase64(sign));
+		}catch(Exception e){
+			throw new RuntimeException("验签字符串[" + data + "]时遇到异常", e);
+		}
+	}
+
+
+	/**
 	 * AES算法加密数据
 	 * @param data 待加密数据
 	 * @param key  密钥
-	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则返回<code>""</code>空字符串
+	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则抛出RuntimeException
 	 * */
 	public static String buildAESEncrypt(String data, String key){
 		try{
@@ -149,8 +338,7 @@ public final class CodecUtil {
 			//将Base64中的URL非法字符如'+','/','='转为其他字符,详见RFC3548
 			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
 		}catch(Exception e){
-			LogUtil.getLogger().error("加密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
-			return "";
+			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
 		}
 	}
 
@@ -159,7 +347,7 @@ public final class CodecUtil {
 	 * AES算法解密数据 
 	 * @param data 待解密数据
 	 * @param key  密钥
-	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则返回<code>""</code>空字符串
+	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则抛出RuntimeException
 	 * */
 	public static String buildAESDecrypt(String data, String key){
 		try {
@@ -167,8 +355,7 @@ public final class CodecUtil {
 			cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Base64.decodeBase64(key), ALGORITHM_AES));
 			return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
 		}catch(Exception e){
-			LogUtil.getLogger().error("解密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
-			return "";
+			throw new RuntimeException("解密字符串[" + data + "]时遇到异常", e);
 		}
 	}
 
@@ -178,7 +365,7 @@ public final class CodecUtil {
 	 * @see 兼容IOS中的SecKeyWrapper加解密(SecKeyWrapper采用的是PKCS7Padding填充方式)
 	 * @param data 待加密数据
 	 * @param key  密钥
-	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则返回<code>""</code>空字符串
+	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则抛出RuntimeException
 	 * */
 	public static String buildAESPKCS7Encrypt(String data, String key){
 		Security.addProvider(new BouncyCastleProvider());
@@ -188,8 +375,7 @@ public final class CodecUtil {
 			cipher.init(Cipher.ENCRYPT_MODE, secretKey, initIV());
 			return Hex.encodeHexString(cipher.doFinal(data.getBytes(CHARSET)));
 		}catch(Exception e){
-			LogUtil.getLogger().error("加密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
-			return "";
+			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
 		}
 	}
 
@@ -199,7 +385,7 @@ public final class CodecUtil {
 	 * @see 兼容IOS中的SecKeyWrapper加解密(SecKeyWrapper采用的是PKCS7Padding填充方式)
 	 * @param data 待解密数据
 	 * @param key  密钥
-	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则返回<code>""</code>空字符串
+	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则抛出RuntimeException
 	 * */
 	public static String buildAESPKCS7Decrypt(String data, String key){
 		try {
@@ -208,8 +394,7 @@ public final class CodecUtil {
 			cipher.init(Cipher.DECRYPT_MODE, secretKey, initIV());
 			return new String(cipher.doFinal(Hex.decodeHex(data.toCharArray())), CHARSET);
 		}catch(Exception e){
-			LogUtil.getLogger().error("解密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
-			return "";
+			throw new RuntimeException("解密字符串[" + data + "]时遇到异常", e);
 		}
 	}
 
@@ -218,7 +403,7 @@ public final class CodecUtil {
 	 * DES算法加密数据
 	 * @param data 待加密数据
 	 * @param key  密钥
-	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则返回<code>""</code>空字符串
+	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则抛出RuntimeException
 	 * */
 	public static String buildDESEncrypt(String data, String key){
 		try{
@@ -228,8 +413,7 @@ public final class CodecUtil {
 			cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
 		}catch(Exception e){
-			LogUtil.getLogger().error("加密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
-			return "";
+			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
 		}
 	}
 
@@ -238,7 +422,7 @@ public final class CodecUtil {
 	 * DES算法解密数据 
 	 * @param data 待解密数据
 	 * @param key  密钥
-	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则返回<code>""</code>空字符串
+	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则抛出RuntimeException
 	 * */
 	public static String buildDESDecrypt(String data, String key){
 		try {
@@ -248,8 +432,7 @@ public final class CodecUtil {
 			cipher.init(Cipher.DECRYPT_MODE, secretKey);
 			return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
 		}catch(Exception e){
-			LogUtil.getLogger().error("解密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
-			return "";
+			throw new RuntimeException("解密字符串[" + data + "]时遇到异常", e);
 		}
 	}
 
@@ -258,7 +441,7 @@ public final class CodecUtil {
 	 * DESede算法加密数据
 	 * @param data 待加密数据
 	 * @param key  密钥
-	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则返回<code>""</code>空字符串
+	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则抛出RuntimeException
 	 * */
 	public static String buildDESedeEncrypt(String data, String key){
 		try{
@@ -268,8 +451,7 @@ public final class CodecUtil {
 			cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
 		}catch(Exception e){
-			LogUtil.getLogger().error("加密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
-			return "";
+			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
 		}
 	}
 
@@ -278,7 +460,7 @@ public final class CodecUtil {
 	 * DESede算法解密数据 
 	 * @param data 待解密数据
 	 * @param key  密钥
-	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则返回<code>""</code>空字符串
+	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则抛出RuntimeException
 	 * */
 	public static String buildDESedeDecrypt(String data, String key){
 		try {
@@ -288,8 +470,7 @@ public final class CodecUtil {
 			cipher.init(Cipher.DECRYPT_MODE, secretKey);
 			return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
 		}catch(Exception e){
-			LogUtil.getLogger().error("解密字符串[" + data + "]时遇到异常,堆栈轨迹如下", e);
-			return "";
+			throw new RuntimeException("解密字符串[" + data + "]时遇到异常", e);
 		}
 	}
 
@@ -312,11 +493,9 @@ public final class CodecUtil {
 			mac = Mac.getInstance(algorithm);
 			mac.init(secretKey);
 		} catch (InvalidKeyException e) {
-			LogUtil.getLogger().error("签名字符串[" + data + "]时发生异常:InvalidKey[" + key + "]");
-			return "";
+			throw new IllegalArgumentException("签名字符串[" + data + "]时发生异常,Invalid key-->[" + key + "]");
 		} catch (NoSuchAlgorithmException e) {
-			LogUtil.getLogger().error("签名字符串[" + data + "]时发生异常:System doesn't support this algorithm[" + algorithm + "]");
-			return "";
+			throw new IllegalArgumentException("签名字符串[" + data + "]时发生异常,No such algorithm-->[" + algorithm + "]");
 		}
 		return Hex.encodeHexString(mac.doFinal(JadyerUtil.getBytes(data, CHARSET)));
 	}
@@ -371,8 +550,7 @@ public final class CodecUtil {
 			//get an algorithm digest instance
 			algorithmData = MessageDigest.getInstance(algorithm).digest(dataBytes);
 		} catch (NoSuchAlgorithmException e) {
-			LogUtil.getLogger().error("签名字符串[" + data + "]时发生异常:System doesn't support this algorithm[" + algorithm + "]");
-			return "";
+			throw new IllegalArgumentException("签名字符串[" + data + "]时发生异常,No such algorithm-->[" + algorithm + "]");
 		}
 		char[] respData = new char[algorithmData.length << 1];
 		//two characters form the hex value

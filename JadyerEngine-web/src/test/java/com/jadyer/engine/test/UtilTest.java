@@ -23,6 +23,7 @@ import org.hibernate.validator.constraints.NotBlank;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.jadyer.engine.common.util.CodecUtil;
 import com.jadyer.engine.common.util.FtpUtil;
 import com.jadyer.engine.common.util.HttpUtil;
 import com.jadyer.engine.common.util.ImageUtil;
@@ -128,7 +129,7 @@ public class UtilTest {
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	@Test
-	public void FtpUtilForUploadTest() throws IOException {
+	public void ftpUtilForUploadTest() throws IOException {
 //		InputStream is = FileUtils.openInputStream(new File("E:\\Wallpaper\\三大名迹.jpg"));
 //		String remoteURL = "/mytest/02/03/" + DateFormatUtils.format(new Date(), "yyyyMMddHHmmss") + ".jpg";
 //		Assert.assertTrue(FtpUtil.upload("192.168.2.60", "ftpupload", "HUvueMGWg92y8SSN", remoteURL, is));
@@ -148,7 +149,7 @@ public class UtilTest {
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	@Test
-	public void FtpUtilForDownloadTest() throws IOException {
+	public void ftpUtilForDownloadTest() throws IOException {
 		String remoteURL = "/mytest/02/03/20151006115200.jpg";
 		String localURL = "C:\\Users\\Jadyer.JADYER-PC.000\\Desktop\\aa.jpg";
 		FtpUtil.downloadAndLogout("192.168.2.60", "ftpupload", "HUvueMGWg92y8SSN", remoteURL, localURL);
@@ -164,7 +165,7 @@ public class UtilTest {
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	@Test
-	public void FtpUtilForDeleteFileTest(){
+	public void ftpUtilForDeleteFileTest(){
 		String remoteURL = "/mytest/02/03/20151006151054_test.jpg";
 		Assert.assertTrue("文件不存在", FtpUtil.deleteFileAndLogout("192.168.2.60", "ftpupload", "HUvueMGWg92y8SSN", remoteURL));
 	}
@@ -176,7 +177,7 @@ public class UtilTest {
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	@Test
-	public void FtpUtilForUploadViaSFTPTest() throws IOException{
+	public void ftpUtilForUploadViaSFTPTest() throws IOException{
 		InputStream is = FileUtils.openInputStream(new File("F:\\Tool\\Wireshark-win32-1.4.9中文版.exe"));
 		String remoteURL = "/upload/test/sf/" + DateFormatUtils.format(new Date(), "yyyyMMddHHmmss") + ".exe";
 		Assert.assertTrue(FtpUtil.uploadAndLogoutViaSFTP("192.168.2.41", 22, "yizhifu", "YMQwcUZh2LvhmR87d7tjmqoRbj6ST1", remoteURL, is));
@@ -189,7 +190,7 @@ public class UtilTest {
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	@Test
-	public void FtpUtilForDownloadViaSFTPTest() throws IOException {
+	public void ftpUtilForDownloadViaSFTPTest() throws IOException {
 		String remoteURL = "/upload/test/sf/20151022151736.exe";
 		String localURL = "C:\\Users\\Jadyer.JADYER-PC.000\\Desktop\\aa.exe";
 		FtpUtil.downloadAndLogoutViaSFTP("192.168.2.41", 22, "yizhifu", "YMQwcUZh2LvhmR87d7tjmqoRbj6ST1", remoteURL, localURL);
@@ -202,9 +203,38 @@ public class UtilTest {
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	@Test
-	public void FtpUtilForDeleteFileViaSFTPTest(){
+	public void ftpUtilForDeleteFileViaSFTPTest(){
 		String remoteURL = "/upload/test/sf/20151022151451.exe";
 		Assert.assertTrue("文件不存在", FtpUtil.deleteFileAndLogoutViaSFTP("192.168.2.41", 22, "yizhifu", "YMQwcUZh2LvhmR87d7tjmqoRbj6ST1", remoteURL));
+	}
+
+
+	/**
+	 * 加解密工具类之RSA算法测试用例
+	 * @create Feb 20, 2016 9:16:52 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	@Test
+	public void codecUtilForRSATest(){
+		String data = "玄玉";
+		Map<String, String> keyMap = CodecUtil.initRSAKey(2048);
+		String publicKeyStr = keyMap.get("publicKey");
+		String privateKeyStr = keyMap.get("privateKey");
+		System.out.println("public-->[" + publicKeyStr + "]");
+		System.out.println("private-->[" + privateKeyStr + "]");
+		System.out.println("明文-->[" + data + "]");
+		System.out.println();
+		String data22 = CodecUtil.buildRSAEncryptByPrivateKey(data, privateKeyStr);
+		System.out.println("私钥加密-->[" + data22 + "]");
+		System.out.println("公钥解密-->[" + CodecUtil.buildRSADecryptByPublicKey(data22, publicKeyStr) +"]");
+		System.out.println();
+		String data33 = CodecUtil.buildRSAEncryptByPublicKey(data, publicKeyStr);
+		System.out.println("公钥加密-->[" + data33 + "]");
+		System.out.println("私钥解密-->[" + CodecUtil.buildRSADecryptByPrivateKey(data33, privateKeyStr) +"]");
+		System.out.println();
+		String data44 = CodecUtil.buildRSASignByPrivateKey(data, privateKeyStr);
+		System.out.println("私钥签名-->[" + data44 +"]");
+		System.out.println("公钥验签-->[" + CodecUtil.buildRSAverifyByPublicKey(data, publicKeyStr, data44) +"]");
 	}
 
 
