@@ -74,8 +74,8 @@ public final class CodecUtil {
 	public static final String ALGORITHM_DES = "DES";
 	public static final String ALGORITHM_DESede = "DESede";
 	//加解密算法/工作模式/填充方式,Java6.0支持PKCS5Padding填充方式,BouncyCastle支持PKCS7Padding填充方式
-	//工作模式有四种,ECB--电子密码本模式,CBC--加密分组链接模式,CFB--加密反馈模式,OFB--输出反馈模式
-	//其中CBC模式是最安全的,也是唯一推荐使用的,http://blog.zheezes.com/java-aes-encryption-uses-and-principles.html
+	//工作模式有ECB--电子密码本模式,CBC--加密分组链接模式,CFB--加密反馈模式,OFB--输出反馈模式,CTR--计数器模式
+	//其中ECB过于简单而不安全,已被弃用,相对的CBC模式是最安全的,http://www.moye.me/2015/06/14/cryptography_rsa/
 	private static final String ALGORITHM_CIPHER_AES = "AES/ECB/PKCS5Padding";
 	private static final String ALGORITHM_CIPHER_AES_PKCS7 = "AES/CBC/PKCS7Padding";
 	private static final String ALGORITHM_CIPHER_DES = "DES/ECB/PKCS5Padding";
