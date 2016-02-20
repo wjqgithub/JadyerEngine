@@ -482,6 +482,7 @@ public final class CodecUtil {
 	 * @param data      待签名数据
 	 * @param key       签名用到的密钥
 	 * @param algorithm 目前其有效值为<code>HmacSHA1,HmacSHA256,HmacSHA512,HmacMD5</code>
+	 * @update 2016-02-20 21:21 HmacMD5和HmacSHA1已经是不安全的了,不推荐使用
 	 * @return String algorithm digest as a lowerCase hex string
 	 * @create Nov 10, 2014 1:43:25 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
