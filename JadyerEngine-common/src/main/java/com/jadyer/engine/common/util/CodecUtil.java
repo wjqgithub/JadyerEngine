@@ -56,7 +56,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @see RSA密钥对
  * @see 可以在线生产密钥对http://web.chacuo.net/netrsakeypair
  * @see 可以使用openssl工具来生成密钥对https://cshall.alipay.com/support/help_detail.htm?help_id=397433
- * @see AES与RSA结合加密数据可参考https://wustrive2008.github.io/2015/08/21/开放接口的安全验证方案(AES+RSA)/
+ * @see 这两种在线生成的RSA密钥对,本工具类的<code>buildRSA**()</code>方法都是支持的
+ * @see 另外,AES与RSA结合加密可参考https://wustrive2008.github.io/2015/08/21/开放接口的安全验证方案(AES+RSA)/
+ * @see 公钥加密,私钥解密..因为我们不希望别人知道我的消息,所以只有我才能解密,仅我可读但别人不可读
+ * @see 私钥签名,公钥验签..签名即不希望有人冒充我来发消息,只有我才能发这个签名,仅我可写但别人不可写,任何人都可读
  * @see -----------------------------------------------------------------------------------------------------------
  * @version v1.5
  * @history v1.5-->增加RSA算法加解密及签名验签的方法
