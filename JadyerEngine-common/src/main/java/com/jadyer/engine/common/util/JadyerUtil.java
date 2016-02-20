@@ -72,7 +72,8 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * 玄玉的开发工具类
- * @version v3.5
+ * @version v3.6
+ * @history v3.6-->add method of <code>bytesToHex()</code> for convert byte to hex
  * @history v3.5-->增加requestToBean()用于将HttpServletRequest参数值转为JavaBean的方法
  * @history v3.4-->增加extractHttpServletRequestMessage用于提取HTTP请求完整报文的两个方法
  * @history v3.3-->增加isAjaxRequest()用于判断是否为Ajax请求的方法
@@ -317,6 +318,18 @@ public final class JadyerUtil {
 			data[i] = Integer.valueOf(""+hexData[i], 16).byteValue();
 		}
 		return buildHexStringWithASCII(data, offset, length);
+	}
+
+
+	/**
+	 * convert byte to hex
+	 */
+	public static String bytesToHex(byte[] in){
+		final StringBuilder sb = new StringBuilder();
+		for(byte b : in){
+			sb.append(String.format("%02X", b));
+		}
+		return sb.toString();
 	}
 
 
