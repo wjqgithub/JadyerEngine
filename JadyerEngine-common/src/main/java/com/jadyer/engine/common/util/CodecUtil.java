@@ -53,6 +53,11 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @see 所以,经过Base64算法编码后,每个字节的最大值都不会超过64
  * @see 最后,Base64算法会查询它自己定制的码表,该码表记录的是0--63所对应键盘上的明文字符,最后将其返回
  * @see -----------------------------------------------------------------------------------------------------------
+ * @see RSA密钥对
+ * @see 可以在线生产密钥对http://web.chacuo.net/netrsakeypair
+ * @see 可以使用openssl工具来生成密钥对https://cshall.alipay.com/support/help_detail.htm?help_id=397433
+ * @see AES与RSA结合加密数据可参考https://wustrive2008.github.io/2015/08/21/开放接口的安全验证方案(AES+RSA)/
+ * @see -----------------------------------------------------------------------------------------------------------
  * @version v1.5
  * @history v1.5-->增加RSA算法加解密及签名验签的方法
  * @history v1.4-->增加AES-PKCS7算法加解密数据的方法
@@ -153,8 +158,6 @@ public final class CodecUtil {
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	public static Map<String, String> initRSAKey(int keysize){
-//		//RSA算法要求有一个可信任的随机数源
-//		SecureRandom sr = new SecureRandom();
 		//为RSA算法创建一个KeyPairGenerator对象
 		KeyPairGenerator kpg;
 		try{
@@ -162,8 +165,8 @@ public final class CodecUtil {
 		}catch(NoSuchAlgorithmException e){
 			throw new IllegalArgumentException("No such algorithm-->[" + ALGORITHM_RSA + "]");
 		}
-//		//利用上面的随机数据源初始化这个KeyPairGenerator对象
-//		kpg.initialize(keysize, sr);
+		//初始化KeyPairGenerator对象,查看initialize()源码发现这一行其实不起作用
+		//kpg.initialize(keysize);
 		//生成密匙对
 		KeyPair keyPair = kpg.generateKeyPair();
 		//得到公钥

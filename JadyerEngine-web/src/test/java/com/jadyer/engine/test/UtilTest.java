@@ -250,6 +250,9 @@ public class UtilTest {
 "njrySaqIQOolI+4gp4nIK6KbwkJi092VoOC02qIQ87uq+98Zcp/X8BnfaoH3/Nfs"+
 "F9eUwYzYqRyvdgE6OrDmg6gvPpxzxPNpPZ58AIdO0uxmS4zGqi3i532piuLo5fBF"+
 "C/gFfuDBLiAhgHyGkHfUJ2c=";
+//		Map<String, String> keyMap = CodecUtil.initRSAKey(2048);
+//		String publicKeyStr = keyMap.get("publicKey");
+//		String privateKeyStr = keyMap.get("privateKey");
 		System.out.println("public-->[" + publicKeyStr + "]");
 		System.out.println("private-->[" + privateKeyStr + "]");
 		System.out.println("明文-->[" + data + "]");
