@@ -1,5 +1,6 @@
 package com.jadyer.engine.common.util;
 
+import java.io.ByteArrayOutputStream;
 import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -34,6 +35,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
@@ -195,6 +197,58 @@ public final class CodecUtil {
 
 
 	/**
+	 * RSA算法分段加解密数据
+	 * @param cipher   实例化并初始化加密或解密工作模式后的Cipher对象
+	 * @param data     待分段加解密数据的字节数组
+	 * @param maxBlock RSA加密允许的明文最大字节数(可选值为117或245),或,RSA解密允许的密文最大字节数(可选值为128或256)
+	 * @create Feb 21, 2016 1:37:21 PM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	@SuppressWarnings("unused")
+	private static byte[] rsaSplitCodec(Cipher cipher, byte[] datas, int maxBlock){
+//		//根据RSA规定的密文长度限制,私钥长度为1024的情况下,将需要解密的内容,按128位拆开解密
+//		InputStream is = new ByteArrayInputStream(datas);
+//		ByteArrayOutputStream os = new ByteArrayOutputStream();
+//		byte[] buff = new byte[128];
+//		int len = -1;
+//		while((len=is.read(buff)) != -1){
+//			byte[] block = null;
+//			if(buff.length == len){
+//				block = buff;
+//			}else{
+//				block = new byte[len];
+//				for(int i=0; i<len; i++){
+//					block[i] = buff[i];
+//				}
+//			}
+//			os.write(cipher.doFinal(block));
+//		}
+//		return os.toByteArray();
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		int offSet = 0;
+		byte[] cache;
+		int i = 0;
+		try{
+			while(datas.length > offSet){
+				if(datas.length-offSet > maxBlock){
+					cache = cipher.doFinal(datas, offSet, maxBlock);
+				}else{
+					cache = cipher.doFinal(datas, offSet, datas.length-offSet);
+				}
+				out.write(cache, 0, cache.length);
+				i++;
+				offSet = i * maxBlock;
+			}
+		}catch(Exception e){
+			throw new RuntimeException("加解密阀值为["+maxBlock+"]的数据时发生异常", e);
+		}
+		byte[] resultDatas = out.toByteArray();
+		IOUtils.closeQuietly(out);
+		return resultDatas;
+	}
+
+
+	/**
 	 * RSA算法私钥加密数据
 	 * @param data 待加密数据
 	 * @param key  RSA私钥字符串
@@ -233,7 +287,6 @@ public final class CodecUtil {
 			//encrypt
 			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
 			cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-			//return Hex.encodeHexString(cipher.doFinal(data.getBytes(CHARSET)));
 			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
 		}catch(Exception e){
 			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
