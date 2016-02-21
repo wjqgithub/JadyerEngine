@@ -66,6 +66,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @see 这个密钥长度值就是我们在生成密钥时,要求指定最少512bit的加密长度,比如<code>initRSAKey(int)</code>指定的参数
  * @see 比如1024bit密钥最多能加密117个字节的明文,UTF-8编码下每个汉字为3个字节,所以UTF-8编码的明文最多允许39个汉字
  * @see 同理2048bit密钥最多能加密245个字节的明文,UTF-8编码下即81个汉字和2个字母或其它符号
+ * @see 以上描述的117和245均经过亲测,当超过RSA规定的117或245时会报告下面的异常
  * @see Caused by: javax.crypto.IllegalBlockSizeException: Data must not be longer than 117 bytes
  * @see Caused by: javax.crypto.IllegalBlockSizeException: Data must not be longer than 245 bytes
  * @see -----------------------------------------------------------------------------------------------------------
