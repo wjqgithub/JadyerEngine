@@ -166,12 +166,15 @@ public final class CodecUtil {
 
 	/**
 	 * 初始化RSA算法密钥对
-	 * @param keysize RSA1024已经不安全了,起码要2048
+	 * @param keysize RSA1024已经不安全了,建议2048
 	 * @return 含公私钥的Map,键分别为publicKey和privateKey
 	 * @create Feb 20, 2016 7:34:41 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	public static Map<String, String> initRSAKey(int keysize){
+		if(keysize == 1024){
+			throw new IllegalArgumentException("RSA1024已经不安全了,请使用2048初始化RSA密钥对");
+		}
 		//为RSA算法创建一个KeyPairGenerator对象
 		KeyPairGenerator kpg;
 		try{
