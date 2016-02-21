@@ -32,7 +32,6 @@ import javax.crypto.spec.DESedeKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
@@ -42,7 +41,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * 加解密工具类
  * @see -----------------------------------------------------------------------------------------------------------
  * @see 这里关于DESede和DES的加解密代码,其实完全可以和AES加解密的代码一样
- * @see 只是在AES加解密代码里把相应算法改一下(经测试这是可行的,加解密均成功),之所以没这么做,也是考虑能多了解一点JavaSE加解密写法
+ * @see 只是在AES加解密代码里把相应算法改下(经测试是可行的,加解密均成功),之所以没这么做,也是考虑多了解一点加解密写法
  * @see -----------------------------------------------------------------------------------------------------------
  * @see Java中每个数据都有一个摘要,即数据指纹..无论这个数据有多大,它的指纹都是固定的128位,即16个字节
  * @see 我们可以使用Java中提供的java.security.MessageDigest工具类,得到随机数的数据摘要,即数据指纹
@@ -64,7 +63,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @see 私钥签名,公钥验签..签名即不希望有人冒充我来发消息,只有我才能发这个签名,仅我可写但别人不可写,任何人都可读
  * @see -----------------------------------------------------------------------------------------------------------
  * @see RSA明文长度
- * @see RSA规定允许加密的明文最大字节数等于密钥长度值除以8再减去11,但签名时无此限制
+ * @see RSA规定允许加密的最大明文字节数等于密钥长度值除以8再减去11,但签名时无此限制
  * @see 这个密钥长度值就是我们在生成密钥时,要求指定最少512bit的加密长度,比如<code>initRSAKey(int)</code>指定的参数
  * @see 比如1024bit密钥最多能加密117个字节的明文,UTF-8编码下每个汉字为3个字节,所以UTF-8编码的明文最多允许39个汉字
  * @see 同理2048bit密钥最多能加密245个字节的明文,UTF-8编码下即81个汉字和2个字母或其它符号
@@ -73,7 +72,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @see Caused by: javax.crypto.IllegalBlockSizeException: Data must not be longer than 245 bytes
  * @see -----------------------------------------------------------------------------------------------------------
  * @see RSA密文长度
- * @see RSA规定允许解密的密文最大字节数等于密钥长度值除以8,但签名时无此限制
+ * @see RSA规定允许解密的最大密文字节数等于密钥长度值除以8,但签名时无此限制
  * @see 比如1024bit密钥最多能解密128个字节的密文,同理2048bit密钥最多能加密256个字节的明文
  * @see 可以通过org.apache.commons.codec.binary.Base64.decodeBase64(data).length得到密文字节数
  * @see 不能直接data.getBytes().length原因是data本身是经过Base64编码后的字符串,所以要Base64解码才能得到真正的字节数组
@@ -81,7 +80,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @see Caused by: javax.crypto.IllegalBlockSizeException: Data must not be longer than 128 bytes
  * @see Caused by: javax.crypto.IllegalBlockSizeException: Data must not be longer than 256 bytes
  * @see -----------------------------------------------------------------------------------------------------------
- * @version v1.6
+ * @version v1.7
+ * @history v1.7-->细化各方法参数注释,使之描述更清晰
  * @history v1.6-->RSA算法加解密方法增加分段加解密功能,理论上可加解密任意长度的明文或密文
  * @history v1.5-->增加RSA算法加解密及签名验签的方法
  * @history v1.4-->增加AES-PKCS7算法加解密数据的方法
@@ -89,7 +89,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @history v1.2-->修改buildHexSign()方法,取消用于置顶返回字符串大小写的第四个参数,修改后默认返回大写字符串
  * @history v1.1-->增加AES,DES,DESede等算法的加解密方法
  * @history v1.0-->新增buildHexSign()的签名方法,目前支持<code>MD5,SHA,SHA1,SHA-1,SHA-256,SHA-384,SHA-512</code>算法
- * @update 2015-2-2 下午05:26:32
+ * @update Feb 21, 2016 8:37:38 PM
  * @create Oct 6, 2013 12:00:35 PM
  * @author 玄玉<http://blog.csdn.net/jadyer>
  */
@@ -128,7 +128,7 @@ public final class CodecUtil {
 			params = AlgorithmParameters.getInstance(ALGORITHM_AES_PKCS7);  
 			params.init(new IvParameterSpec(iv));
 		} catch (Exception e) {
-			throw new IllegalArgumentException("生成AES/CBC/PKCS7Padding专用的IV时失败", e);
+			throw new IllegalArgumentException("生成"+ALGORITHM_CIPHER_AES_PKCS7+"专用的IV时失败", e);
 		}
 		return params;
 	}
@@ -137,10 +137,10 @@ public final class CodecUtil {
 	/**
 	 * 初始化算法密钥
 	 * @see 目前algorithm参数可选值为AES,DES,DESede,输入其它值时会抛异常
-	 * @see 若系统无法识别algorithm会导致实例化密钥生成器失败,此时也会抛异常
+	 * @see 若系统无法识别algorithm会导致实例化密钥生成器失败,也会抛异常
 	 * @param algorithm      指定生成哪种算法的密钥
 	 * @param isPKCS7Padding 是否采用PKCS7Padding填充方式(需要BouncyCastle支持)
-	 * @throws DecoderException 
+	 * @return 经过Base64编码后的密钥字符串,对于AES-PKCS7Padding算法则返回16进制表示的密钥字符串
 	 */
 	public static String initKey(String algorithm, boolean isPKCS7Padding){
 		if(isPKCS7Padding){
@@ -178,7 +178,7 @@ public final class CodecUtil {
 	/**
 	 * 初始化RSA算法密钥对
 	 * @param keysize RSA1024已经不安全了,建议2048
-	 * @return 含公私钥的Map,键分别为publicKey和privateKey
+	 * @return 经过Base64编码后的公私钥Map,键名分别为publicKey和privateKey
 	 * @create Feb 20, 2016 7:34:41 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
@@ -199,10 +199,10 @@ public final class CodecUtil {
 		KeyPair keyPair = kpg.generateKeyPair();
 		//得到公钥
 		Key publicKey = keyPair.getPublic();
-		String publicKeyStr = Base64.encodeBase64String(publicKey.getEncoded());
+		String publicKeyStr = Base64.encodeBase64URLSafeString(publicKey.getEncoded());
 		//得到私钥
 		Key privateKey = keyPair.getPrivate();
-		String privateKeyStr = Base64.encodeBase64String(privateKey.getEncoded());
+		String privateKeyStr = Base64.encodeBase64URLSafeString(privateKey.getEncoded());
 		Map<String, String> keyPairMap = new HashMap<String, String>();
 		keyPairMap.put("publicKey", publicKeyStr);
 		keyPairMap.put("privateKey", privateKeyStr);
@@ -212,10 +212,10 @@ public final class CodecUtil {
 
 	/**
 	 * RSA算法分段加解密数据
-	 * @param cipher   实例化并初始化加密或解密工作模式后的Cipher对象
-	 * @param data     待分段加解密数据的字节数组
-	 * @param maxBlock RSA加密允许的明文最大字节数(可选值为117或245),或,RSA解密允许的密文最大字节数(可选值为128或256)
-	 * @return 返回加密或解密后得到的数据的字节数组
+	 * @param cipher   初始化了加解密工作模式后的javax.crypto.Cipher对象
+	 * @param data     待分段加解密的数据的字节数组
+	 * @param maxBlock RSA加密允许的最大明文字节数117/245,或,RSA解密允许的最大密文字节数128/256
+	 * @return 加密或解密后得到的数据的字节数组
 	 * @create Feb 21, 2016 1:37:21 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
@@ -246,8 +246,9 @@ public final class CodecUtil {
 
 	/**
 	 * RSA算法私钥加密数据
-	 * @param data 待加密数据
+	 * @param data 待加密的明文字符串
 	 * @param key  RSA私钥字符串
+	 * @return RSA私钥加密后的经过Base64编码的密文字符串
 	 * @create Feb 20, 2016 8:03:25 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
@@ -271,8 +272,9 @@ public final class CodecUtil {
 
 	/**
 	 * RSA算法公钥加密数据
-	 * @param data 待加密数据
+	 * @param data 待加密的明文字符串
 	 * @param key  RSA公钥字符串
+	 * @return RSA公钥加密后的经过Base64编码的密文字符串
 	 * @create Feb 20, 2016 8:25:21 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
@@ -296,8 +298,9 @@ public final class CodecUtil {
 
 	/**
 	 * RSA算法公钥解密数据
-	 * @param data 待解密数据
+	 * @param data 待解密的经过Base64编码的密文字符串
 	 * @param key  RSA公钥字符串
+	 * @return RSA公钥解密后的明文字符串
 	 * @create Feb 20, 2016 8:33:22 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
@@ -321,8 +324,9 @@ public final class CodecUtil {
 
 	/**
 	 * RSA算法私钥解密数据
-	 * @param data 待解密数据
+	 * @param data 待解密的经过Base64编码的密文字符串
 	 * @param key  RSA私钥字符串
+	 * @return RSA私钥解密后的明文字符串
 	 * @create Feb 20, 2016 8:33:22 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
@@ -346,9 +350,10 @@ public final class CodecUtil {
 
 	/**
 	 * RSA算法使用私钥对数据生成数字签名
-	 * @see 注意签名算法SHA1WithRSA已被废弃,建议使用SHA256WithRSA
-	 * @param data 待签名数据
+	 * @see 注意签名算法SHA1WithRSA已被废弃,推荐使用SHA256WithRSA
+	 * @param data 待签名的明文字符串
 	 * @param key  RSA私钥字符串
+	 * @return RSA私钥签名后的经过Base64编码的字符串
 	 * @create Feb 20, 2016 8:43:49 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
@@ -371,9 +376,10 @@ public final class CodecUtil {
 
 	/**
 	 * RSA算法使用公钥校验数字签名
-	 * @param data 签名的数据
+	 * @param data 参与签名的明文字符串
 	 * @param key  RSA公钥字符串
-	 * @param sign 签名得到的字符串
+	 * @param sign RSA签名得到的经过Base64编码的字符串
+	 * @return true--验签通过,false--验签未通过
 	 * @create Feb 20, 2016 8:51:49 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
@@ -396,9 +402,9 @@ public final class CodecUtil {
 
 	/**
 	 * AES算法加密数据
-	 * @param data 待加密数据
-	 * @param key  密钥
-	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则抛出RuntimeException
+	 * @param data 待加密的明文数据
+	 * @param key  AES密钥字符串
+	 * @return AES加密后的经过Base64编码的密文字符串,加密过程中遇到异常则抛出RuntimeException
 	 * */
 	public static String buildAESEncrypt(String data, String key){
 		try{
@@ -417,9 +423,9 @@ public final class CodecUtil {
 
 	/**
 	 * AES算法解密数据 
-	 * @param data 待解密数据
-	 * @param key  密钥
-	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则抛出RuntimeException
+	 * @param data 待解密的经过Base64编码的密文字符串
+	 * @param key  AES密钥字符串
+	 * @return AES解密后的明文字符串,解密过程中遇到异常则抛出RuntimeException
 	 * */
 	public static String buildAESDecrypt(String data, String key){
 		try {
@@ -435,9 +441,9 @@ public final class CodecUtil {
 	/**
 	 * AES-PKCS7算法加密数据
 	 * @see 兼容IOS中的SecKeyWrapper加解密(SecKeyWrapper采用的是PKCS7Padding填充方式)
-	 * @param data 待加密数据
-	 * @param key  密钥
-	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则抛出RuntimeException
+	 * @param data 待加密的明文字符串
+	 * @param key  AES密钥字符串
+	 * @return AES-PKCS7加密后的16进制表示的密文字符串,加密过程中遇到异常则抛出RuntimeException
 	 * */
 	public static String buildAESPKCS7Encrypt(String data, String key){
 		Security.addProvider(new BouncyCastleProvider());
@@ -455,9 +461,9 @@ public final class CodecUtil {
 	/**
 	 * AES-PKCS7算法解密数据 
 	 * @see 兼容IOS中的SecKeyWrapper加解密(SecKeyWrapper采用的是PKCS7Padding填充方式)
-	 * @param data 待解密数据
-	 * @param key  密钥
-	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则抛出RuntimeException
+	 * @param data 待解密的16进制表示的密文字符串
+	 * @param key  AES密钥字符串
+	 * @return AES-PKCS7解密后的明文字符串,解密过程中遇到异常则抛出RuntimeException
 	 * */
 	public static String buildAESPKCS7Decrypt(String data, String key){
 		try {
@@ -473,9 +479,9 @@ public final class CodecUtil {
 
 	/**
 	 * DES算法加密数据
-	 * @param data 待加密数据
+	 * @param data 待加密的明文字符串
 	 * @param key  密钥
-	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则抛出RuntimeException
+	 * @return 加密后的经过Base64编码的密文字符串,加密过程中遇到异常则抛出RuntimeException
 	 * */
 	public static String buildDESEncrypt(String data, String key){
 		try{
@@ -492,9 +498,9 @@ public final class CodecUtil {
 
 	/**
 	 * DES算法解密数据 
-	 * @param data 待解密数据
+	 * @param data 待解密的经过Base64编码的密文字符串
 	 * @param key  密钥
-	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则抛出RuntimeException
+	 * @return 解密后的明文字符串,解密过程中遇到异常则抛出RuntimeException
 	 * */
 	public static String buildDESDecrypt(String data, String key){
 		try {
@@ -511,9 +517,9 @@ public final class CodecUtil {
 
 	/**
 	 * DESede算法加密数据
-	 * @param data 待加密数据
+	 * @param data 待加密的明文字符串
 	 * @param key  密钥
-	 * @return 加密后的数据,加密过程中遇到异常导致加密失败则抛出RuntimeException
+	 * @return 加密后的经过Base64编码的密文字符串,加密过程中遇到异常则抛出RuntimeException
 	 * */
 	public static String buildDESedeEncrypt(String data, String key){
 		try{
@@ -530,9 +536,9 @@ public final class CodecUtil {
 
 	/**
 	 * DESede算法解密数据 
-	 * @param data 待解密数据
+	 * @param data 待解密的经过Base64编码的密文字符串
 	 * @param key  密钥
-	 * @return 解密后的数据,解密过程中遇到异常导致解密失败则抛出RuntimeException
+	 * @return 解密后的明文字符串,解密过程中遇到异常则抛出RuntimeException
 	 * */
 	public static String buildDESedeDecrypt(String data, String key){
 		try {
@@ -551,8 +557,8 @@ public final class CodecUtil {
 	 * Hmac签名
 	 * @see Calculates the algorithm digest and returns the value as a hex string
 	 * @see If system dosen't support this <code>algorithm</code>, return "" not null
-	 * @param data      待签名数据
-	 * @param key       签名用到的密钥
+	 * @param data      待签名的明文字符串
+	 * @param key       签名用到的密钥字符串
 	 * @param algorithm 目前其有效值为<code>HmacSHA1,HmacSHA256,HmacSHA512,HmacMD5</code>
 	 * @update 2016-02-20 21:21 HmacMD5和HmacSHA1已经是不安全的了,不推荐使用
 	 * @return String algorithm digest as a lowerCase hex string
