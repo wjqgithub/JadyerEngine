@@ -64,7 +64,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @see 私钥签名,公钥验签..签名即不希望有人冒充我来发消息,只有我才能发这个签名,仅我可写但别人不可写,任何人都可读
  * @see -----------------------------------------------------------------------------------------------------------
  * @see RSA明文长度
- * @see RSA规定允许加密的明文最大字节数等于密钥长度值除以8再减去11
+ * @see RSA规定允许加密的明文最大字节数等于密钥长度值除以8再减去11,但签名时无此限制
  * @see 这个密钥长度值就是我们在生成密钥时,要求指定最少512bit的加密长度,比如<code>initRSAKey(int)</code>指定的参数
  * @see 比如1024bit密钥最多能加密117个字节的明文,UTF-8编码下每个汉字为3个字节,所以UTF-8编码的明文最多允许39个汉字
  * @see 同理2048bit密钥最多能加密245个字节的明文,UTF-8编码下即81个汉字和2个字母或其它符号
@@ -72,7 +72,17 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @see Caused by: javax.crypto.IllegalBlockSizeException: Data must not be longer than 117 bytes
  * @see Caused by: javax.crypto.IllegalBlockSizeException: Data must not be longer than 245 bytes
  * @see -----------------------------------------------------------------------------------------------------------
- * @version v1.5
+ * @see RSA密文长度
+ * @see RSA规定允许解密的密文最大字节数等于密钥长度值除以8,但签名时无此限制
+ * @see 比如1024bit密钥最多能解密128个字节的密文,同理2048bit密钥最多能加密256个字节的明文
+ * @see 可以通过org.apache.commons.codec.binary.Base64.decodeBase64(data).length得到密文字节数
+ * @see 不能直接data.getBytes().length原因是data本身是经过Base64编码后的字符串,所以要Base64解码才能得到真正的字节数组
+ * @see 以上描述的128和256均经过亲测,当超过RSA规定的128或256时会报告下面的异常
+ * @see Caused by: javax.crypto.IllegalBlockSizeException: Data must not be longer than 128 bytes
+ * @see Caused by: javax.crypto.IllegalBlockSizeException: Data must not be longer than 256 bytes
+ * @see -----------------------------------------------------------------------------------------------------------
+ * @version v1.6
+ * @history v1.6-->RSA算法加解密方法增加分段加解密功能,理论上可加解密任意长度的明文或密文
  * @history v1.5-->增加RSA算法加解密及签名验签的方法
  * @history v1.4-->增加AES-PKCS7算法加解密数据的方法
  * @history v1.3-->增加buildHMacSign()的签名方法,目前支持<code>HMacSHA1,HMacSHA256,HMacSHA512,HMacMD5</code>算法
@@ -204,41 +214,23 @@ public final class CodecUtil {
 	 * @param cipher   实例化并初始化加密或解密工作模式后的Cipher对象
 	 * @param data     待分段加解密数据的字节数组
 	 * @param maxBlock RSA加密允许的明文最大字节数(可选值为117或245),或,RSA解密允许的密文最大字节数(可选值为128或256)
+	 * @return 返回加密或解密后得到的数据的字节数组
 	 * @create Feb 21, 2016 1:37:21 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
-	@SuppressWarnings("unused")
 	private static byte[] rsaSplitCodec(Cipher cipher, byte[] datas, int maxBlock){
-//		//根据RSA规定的密文长度限制,私钥长度为1024的情况下,将需要解密的内容,按128位拆开解密
-//		InputStream is = new ByteArrayInputStream(datas);
-//		ByteArrayOutputStream os = new ByteArrayOutputStream();
-//		byte[] buff = new byte[128];
-//		int len = -1;
-//		while((len=is.read(buff)) != -1){
-//			byte[] block = null;
-//			if(buff.length == len){
-//				block = buff;
-//			}else{
-//				block = new byte[len];
-//				for(int i=0; i<len; i++){
-//					block[i] = buff[i];
-//				}
-//			}
-//			os.write(cipher.doFinal(block));
-//		}
-//		return os.toByteArray();
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		int offSet = 0;
-		byte[] cache;
+		byte[] buff;
 		int i = 0;
 		try{
 			while(datas.length > offSet){
 				if(datas.length-offSet > maxBlock){
-					cache = cipher.doFinal(datas, offSet, maxBlock);
+					buff = cipher.doFinal(datas, offSet, maxBlock);
 				}else{
-					cache = cipher.doFinal(datas, offSet, datas.length-offSet);
+					buff = cipher.doFinal(datas, offSet, datas.length-offSet);
 				}
-				out.write(cache, 0, cache.length);
+				out.write(buff, 0, buff.length);
 				i++;
 				offSet = i * maxBlock;
 			}
@@ -267,7 +259,9 @@ public final class CodecUtil {
 			//encrypt
 			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
 			cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
+			//return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
+			//这里假设私钥长度是2048,如果私钥长度是1024,可以把参数值245改为117
+			return Base64.encodeBase64URLSafeString(rsaSplitCodec(cipher, data.getBytes(CHARSET), 245));
 		}catch(Exception e){
 			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
 		}
@@ -290,7 +284,9 @@ public final class CodecUtil {
 			//encrypt
 			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
 			cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-			return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
+			//return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
+			//这里假设私钥长度是2048,如果私钥长度是1024,可以把参数值245改为117
+			return Base64.encodeBase64URLSafeString(rsaSplitCodec(cipher, data.getBytes(CHARSET), 245));
 		}catch(Exception e){
 			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
 		}
@@ -313,7 +309,9 @@ public final class CodecUtil {
 			//decrypt
 			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
 			cipher.init(Cipher.DECRYPT_MODE, publicKey);
-			return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
+			//return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
+			//这里假设私钥长度是2048,如果私钥长度是1024,可以把参数值256改为128
+			return new String(rsaSplitCodec(cipher, Base64.decodeBase64(data), 256), CHARSET);
 		}catch(Exception e){
 			throw new RuntimeException("解密字符串[" + data + "]时遇到异常", e);
 		}
@@ -336,7 +334,9 @@ public final class CodecUtil {
 			//decrypt
 			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
 			cipher.init(Cipher.DECRYPT_MODE, privateKey);
-			return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
+			//return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
+			//这里假设私钥长度是2048,如果私钥长度是1024,可以把参数值256改为128
+			return new String(rsaSplitCodec(cipher, Base64.decodeBase64(data), 256), CHARSET);
 		}catch(Exception e){
 			throw new RuntimeException("解密字符串[" + data + "]时遇到异常", e);
 		}
