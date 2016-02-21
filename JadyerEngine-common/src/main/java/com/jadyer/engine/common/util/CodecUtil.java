@@ -212,14 +212,20 @@ public final class CodecUtil {
 
 	/**
 	 * RSA算法分段加解密数据
-	 * @param cipher   初始化了加解密工作模式后的javax.crypto.Cipher对象
-	 * @param data     待分段加解密的数据的字节数组
-	 * @param maxBlock RSA加密允许的最大明文字节数117/245,或,RSA解密允许的最大密文字节数128/256
+	 * @param cipher 初始化了加解密工作模式后的javax.crypto.Cipher对象
+	 * @param opmode 加解密模式,值为javax.crypto.Cipher.ENCRYPT_MODE/DECRYPT_MODE
+	 * @param data   待分段加解密的数据的字节数组
 	 * @return 加密或解密后得到的数据的字节数组
 	 * @create Feb 21, 2016 1:37:21 PM
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
-	private static byte[] rsaSplitCodec(Cipher cipher, byte[] datas, int maxBlock){
+	private static byte[] rsaSplitCodec(Cipher cipher, int opmode, byte[] datas){
+		int maxBlock = 0;
+		if(opmode == Cipher.DECRYPT_MODE){
+			maxBlock = ALGORITHM_RSA_PRIVATE_KEY_LENGTH / 8;
+		}else{
+			maxBlock = ALGORITHM_RSA_PRIVATE_KEY_LENGTH / 8 - 11;
+		}
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		int offSet = 0;
 		byte[] buff;
@@ -262,8 +268,7 @@ public final class CodecUtil {
 			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
 			cipher.init(Cipher.ENCRYPT_MODE, privateKey);
 			//return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
-			//这里假设私钥长度是2048,如果私钥长度是1024,可以把参数值245改为117
-			return Base64.encodeBase64URLSafeString(rsaSplitCodec(cipher, data.getBytes(CHARSET), ALGORITHM_RSA_PRIVATE_KEY_LENGTH/8-11));
+			return Base64.encodeBase64URLSafeString(rsaSplitCodec(cipher, Cipher.ENCRYPT_MODE, data.getBytes(CHARSET)));
 		}catch(Exception e){
 			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
 		}
@@ -288,8 +293,7 @@ public final class CodecUtil {
 			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
 			cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 			//return Base64.encodeBase64URLSafeString(cipher.doFinal(data.getBytes(CHARSET)));
-			//这里假设私钥长度是2048,如果私钥长度是1024,可以把参数值245改为117
-			return Base64.encodeBase64URLSafeString(rsaSplitCodec(cipher, data.getBytes(CHARSET), ALGORITHM_RSA_PRIVATE_KEY_LENGTH/8-11));
+			return Base64.encodeBase64URLSafeString(rsaSplitCodec(cipher, Cipher.ENCRYPT_MODE, data.getBytes(CHARSET)));
 		}catch(Exception e){
 			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
 		}
@@ -314,8 +318,7 @@ public final class CodecUtil {
 			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
 			cipher.init(Cipher.DECRYPT_MODE, publicKey);
 			//return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
-			//这里假设私钥长度是2048,如果私钥长度是1024,可以把参数值256改为128
-			return new String(rsaSplitCodec(cipher, Base64.decodeBase64(data), ALGORITHM_RSA_PRIVATE_KEY_LENGTH/8), CHARSET);
+			return new String(rsaSplitCodec(cipher, Cipher.DECRYPT_MODE, Base64.decodeBase64(data)), CHARSET);
 		}catch(Exception e){
 			throw new RuntimeException("解密字符串[" + data + "]时遇到异常", e);
 		}
@@ -340,8 +343,7 @@ public final class CodecUtil {
 			Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
 			cipher.init(Cipher.DECRYPT_MODE, privateKey);
 			//return new String(cipher.doFinal(Base64.decodeBase64(data)), CHARSET);
-			//这里假设私钥长度是2048,如果私钥长度是1024,可以把参数值256改为128
-			return new String(rsaSplitCodec(cipher, Base64.decodeBase64(data), ALGORITHM_RSA_PRIVATE_KEY_LENGTH/8), CHARSET);
+			return new String(rsaSplitCodec(cipher, Cipher.DECRYPT_MODE, Base64.decodeBase64(data)), CHARSET);
 		}catch(Exception e){
 			throw new RuntimeException("解密字符串[" + data + "]时遇到异常", e);
 		}
