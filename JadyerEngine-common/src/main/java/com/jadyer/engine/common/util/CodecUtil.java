@@ -61,6 +61,14 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @see 公钥加密,私钥解密..因为我们不希望别人知道我的消息,所以只有我才能解密,仅我可读但别人不可读
  * @see 私钥签名,公钥验签..签名即不希望有人冒充我来发消息,只有我才能发这个签名,仅我可写但别人不可写,任何人都可读
  * @see -----------------------------------------------------------------------------------------------------------
+ * @see RSA明文长度
+ * @see RSA规定允许加密的明文最大字节数等于密钥长度值除以8再减去11
+ * @see 这个密钥长度值就是我们在生成密钥时,要求指定最少512bit的加密长度,比如<code>initRSAKey(int)</code>指定的参数
+ * @see 比如1024bit密钥最多能加密117个字节的明文,UTF-8编码下每个汉字为3个字节,所以UTF-8编码的明文最多允许39个汉字
+ * @see 同理2048bit密钥最多能加密245个字节的明文,UTF-8编码下即81个汉字和2个字母或其它符号
+ * @see Caused by: javax.crypto.IllegalBlockSizeException: Data must not be longer than 117 bytes
+ * @see Caused by: javax.crypto.IllegalBlockSizeException: Data must not be longer than 245 bytes
+ * @see -----------------------------------------------------------------------------------------------------------
  * @version v1.5
  * @history v1.5-->增加RSA算法加解密及签名验签的方法
  * @history v1.4-->增加AES-PKCS7算法加解密数据的方法
@@ -114,8 +122,8 @@ public final class CodecUtil {
 
 	/**
 	 * 初始化算法密钥
-	 * @see 目前algorithm参数可选值为AES,DES,DESede,输入其它值时会返回<code>""</code>空字符串
-	 * @see 若系统无法识别algorithm会导致实例化密钥生成器失败,此时也会返回<code>""</code>空字符串
+	 * @see 目前algorithm参数可选值为AES,DES,DESede,输入其它值时会抛异常
+	 * @see 若系统无法识别algorithm会导致实例化密钥生成器失败,此时也会抛异常
 	 * @param algorithm      指定生成哪种算法的密钥
 	 * @param isPKCS7Padding 是否采用PKCS7Padding填充方式(需要BouncyCastle支持)
 	 * @throws DecoderException 
@@ -168,8 +176,8 @@ public final class CodecUtil {
 		}catch(NoSuchAlgorithmException e){
 			throw new IllegalArgumentException("No such algorithm-->[" + ALGORITHM_RSA + "]");
 		}
-		//初始化KeyPairGenerator对象,查看initialize()源码发现这一行其实不起作用
-		//kpg.initialize(keysize);
+		//初始化KeyPairGenerator对象,不要被initialize()源码表面上欺骗,其实这里声明的size是生效的
+		kpg.initialize(keysize);
 		//生成密匙对
 		KeyPair keyPair = kpg.generateKeyPair();
 		//得到公钥
@@ -194,7 +202,7 @@ public final class CodecUtil {
 	 */
 	public static String buildRSAEncryptByPrivateKey(String data, String key){
 		try{
-			//获得私钥对象
+			//通过PKCS#8编码的Key指令获得私钥对象
 			PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(Base64.decodeBase64(key));
 			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
 			Key privateKey = keyFactory.generatePrivate(pkcs8KeySpec);
@@ -217,7 +225,7 @@ public final class CodecUtil {
 	 */
 	public static String buildRSAEncryptByPublicKey(String data, String key){
 		try{
-			//获得公钥对象
+			//通过X509编码的Key指令获得公钥对象
 			X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(Base64.decodeBase64(key));
 			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
 			Key publicKey = keyFactory.generatePublic(x509KeySpec);
@@ -241,7 +249,7 @@ public final class CodecUtil {
 	 */
 	public static String buildRSADecryptByPublicKey(String data, String key){
 		try{
-			//获得公钥对象
+			//通过X509编码的Key指令获得公钥对象
 			X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(Base64.decodeBase64(key));
 			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
 			Key publicKey = keyFactory.generatePublic(x509KeySpec);
@@ -264,7 +272,7 @@ public final class CodecUtil {
 	 */
 	public static String buildRSADecryptByPrivateKey(String data, String key){
 		try{
-			//获得私钥对象
+			//通过PKCS#8编码的Key指令获得私钥对象
 			PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(Base64.decodeBase64(key));
 			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
 			Key privateKey = keyFactory.generatePrivate(pkcs8KeySpec);
@@ -288,7 +296,7 @@ public final class CodecUtil {
 	 */
 	public static String buildRSASignByPrivateKey(String data, String key){
 		try{
-			//获得私钥对象
+			//通过PKCS#8编码的Key指令获得私钥对象
 			PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(Base64.decodeBase64(key));
 			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
 			PrivateKey privateKey = keyFactory.generatePrivate(pkcs8KeySpec);
@@ -313,7 +321,7 @@ public final class CodecUtil {
 	 */
 	public static boolean buildRSAverifyByPublicKey(String data, String key, String sign){
 		try{
-			//获得公钥对象
+			//通过X509编码的Key指令获得公钥对象
 			X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(Base64.decodeBase64(key));
 			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
 			PublicKey publicKey = keyFactory.generatePublic(x509KeySpec);

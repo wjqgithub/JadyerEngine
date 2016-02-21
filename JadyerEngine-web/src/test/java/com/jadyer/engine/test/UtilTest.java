@@ -217,42 +217,11 @@ public class UtilTest {
 	@Test
 	public void codecUtilForRSATest(){
 		String data = "玄玉";
-		String publicKeyStr = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApaHTWseE87o9ypJ9nDFa"+
-"bPSe60ZODPdcMngQ4KC2kHMC0uznzmABEdmpw/Zc86JhsMer5Z4BAzu1N22gCoB4"+
-"uoPr1S0SQwTEInPEuKKRnZYqqj8Yt18sOJQr7hIAYzLo9lAwJE35w84Wi9Tub3WJ"+
-"d5FaMWAsuNyfYoQnWj/a7cA1+sEFYNug8DVgvtJZncOWwMAohcEkjJjQSaClItTG"+
-"Vpsy18pt83/jWpRofy7DzDWR+svEpiUaWrB0naGoJJDqL0pYOu3z0qkxnvUrJAZA"+
-"hdbpAlXImMgc8Pu3ubqRa2VtcB0V/eAfikXTl0kbwhzwaaH9BerYFckGuhu54Jcv"+
-"hQIDAQAB";
-		String privateKeyStr = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQClodNax4Tzuj3K"+
-"kn2cMVps9J7rRk4M91wyeBDgoLaQcwLS7OfOYAER2anD9lzzomGwx6vlngEDO7U3"+
-"baAKgHi6g+vVLRJDBMQic8S4opGdliqqPxi3Xyw4lCvuEgBjMuj2UDAkTfnDzhaL"+
-"1O5vdYl3kVoxYCy43J9ihCdaP9rtwDX6wQVg26DwNWC+0lmdw5bAwCiFwSSMmNBJ"+
-"oKUi1MZWmzLXym3zf+NalGh/LsPMNZH6y8SmJRpasHSdoagkkOovSlg67fPSqTGe"+
-"9SskBkCF1ukCVciYyBzw+7e5upFrZW1wHRX94B+KRdOXSRvCHPBpof0F6tgVyQa6"+
-"G7ngly+FAgMBAAECggEAYuvcVBpXUE1J/EMzW+ap7+rFQxTxJpNRcB7/TXkOsATQ"+
-"ifLNmxcBbIzH9G6eIzA3EiKeinusdSbi2yDQ9ZS3BgYmAmJxxq8BCOaFdhQ5zZlT"+
-"D+yxMUtZGM190yjTLGvKcNmBdx1O71+VXZwlb1IOcOfRqy2aaCnz0x3EdwUuFtHA"+
-"ArnnVyeR2g2Xgl1mnEk4KQa7usMfxc6xP+8iD89S4Es7wJqUYM/ZsIiHUXv1u96J"+
-"gFppd3THGPR7Ci2nrzl3UfhmVQXYqHhthVYwlDBk5Q5YVSGENSs1rbD5QWNdfjen"+
-"o65eeQKRREriAorIyf41JBEIs6BCOUbsQHA4AupHHQKBgQDWPzsmJ0W9VwHsA+dK"+
-"UdWz6HFAgJ4bn90OlAwH9ARHXtPc//q+Qoy7G/wNF4bsBmZl8CCG++pYZ0teKVlK"+
-"EpFN0DTi4NYOdeTaNVA58Az6aMyoqUdxHxCAocIOtbkNhsBLeD9CfLxXKe5OUDNO"+
-"kfA2y4+T2p5Of3ngEYLF1vhKJwKBgQDF6TO5MRpmDo2ykFwrqiObQ7xlKXNPFaxz"+
-"nmK0LEYzOASvO4SzOHJststSPdw8rhJ6Oh0rlocvjra+zsxNbPZQMssu2X5kvgKI"+
-"4t+hWR39z/I0wvkg+CeT4SUkpcRX1TO6iQZ8uSOO/BhnOmDe5rSuP5SvZW/2J7w6"+
-"sjjRlo8gcwKBgDAuFA0mc8Z6lJIQ5qiN8rL8qMtKoUOxFbM7k+EN/RBXwOlIH4k9"+
-"ygwh5PLEwbC+V7TA5W+1oyOyRv6r6cqAlnCbS+lhioHB/W8c4ifFVgXSH4QmXUyR"+
-"IdLrjYplT3I9RW0zY3Z+OpSXd2HhI0ieBRkteeJUHZmljTDYf0Iib7+tAoGATbQQ"+
-"1b4cskM2iQw60/35+uTuW/2ZQ0ysJ7zg3gKgEU4GMNK6eC9KZbqjO4gEJ2Lk6E5W"+
-"051HOHnc8C97cU69qqE2uw8zm9QqZJpG2S+HIfb6DpMag0JLL7lu/uOCokWYCL3x"+
-"6Rg7iNEbt7PpArsr51oZQ4AdJFVXhuggfNGTIlcCgYEAtdRuV5P8x8U3l5Yi52aj"+
-"njrySaqIQOolI+4gp4nIK6KbwkJi092VoOC02qIQ87uq+98Zcp/X8BnfaoH3/Nfs"+
-"F9eUwYzYqRyvdgE6OrDmg6gvPpxzxPNpPZ58AIdO0uxmS4zGqi3i532piuLo5fBF"+
-"C/gFfuDBLiAhgHyGkHfUJ2c=";
-//		Map<String, String> keyMap = CodecUtil.initRSAKey(2048);
-//		String publicKeyStr = keyMap.get("publicKey");
-//		String privateKeyStr = keyMap.get("privateKey");
+		//String publicKeyStr = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApaHTWseE87o9ypJ9nDFabPSe60ZODPdcMngQ4KC2kHMC0uznzmABEdmpw/Zc86JhsMer5Z4BAzu1N22gCoB4uoPr1S0SQwTEInPEuKKRnZYqqj8Yt18sOJQr7hIAYzLo9lAwJE35w84Wi9Tub3WJd5FaMWAsuNyfYoQnWj/a7cA1+sEFYNug8DVgvtJZncOWwMAohcEkjJjQSaClItTGVpsy18pt83/jWpRofy7DzDWR+svEpiUaWrB0naGoJJDqL0pYOu3z0qkxnvUrJAZAhdbpAlXImMgc8Pu3ubqRa2VtcB0V/eAfikXTl0kbwhzwaaH9BerYFckGuhu54JcvhQIDAQAB";
+		//String privateKeyStr = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQClodNax4Tzuj3Kkn2cMVps9J7rRk4M91wyeBDgoLaQcwLS7OfOYAER2anD9lzzomGwx6vlngEDO7U3baAKgHi6g+vVLRJDBMQic8S4opGdliqqPxi3Xyw4lCvuEgBjMuj2UDAkTfnDzhaL1O5vdYl3kVoxYCy43J9ihCdaP9rtwDX6wQVg26DwNWC+0lmdw5bAwCiFwSSMmNBJoKUi1MZWmzLXym3zf+NalGh/LsPMNZH6y8SmJRpasHSdoagkkOovSlg67fPSqTGe9SskBkCF1ukCVciYyBzw+7e5upFrZW1wHRX94B+KRdOXSRvCHPBpof0F6tgVyQa6G7ngly+FAgMBAAECggEAYuvcVBpXUE1J/EMzW+ap7+rFQxTxJpNRcB7/TXkOsATQifLNmxcBbIzH9G6eIzA3EiKeinusdSbi2yDQ9ZS3BgYmAmJxxq8BCOaFdhQ5zZlTD+yxMUtZGM190yjTLGvKcNmBdx1O71+VXZwlb1IOcOfRqy2aaCnz0x3EdwUuFtHAArnnVyeR2g2Xgl1mnEk4KQa7usMfxc6xP+8iD89S4Es7wJqUYM/ZsIiHUXv1u96JgFppd3THGPR7Ci2nrzl3UfhmVQXYqHhthVYwlDBk5Q5YVSGENSs1rbD5QWNdfjeno65eeQKRREriAorIyf41JBEIs6BCOUbsQHA4AupHHQKBgQDWPzsmJ0W9VwHsA+dKUdWz6HFAgJ4bn90OlAwH9ARHXtPc//q+Qoy7G/wNF4bsBmZl8CCG++pYZ0teKVlKEpFN0DTi4NYOdeTaNVA58Az6aMyoqUdxHxCAocIOtbkNhsBLeD9CfLxXKe5OUDNOkfA2y4+T2p5Of3ngEYLF1vhKJwKBgQDF6TO5MRpmDo2ykFwrqiObQ7xlKXNPFaxznmK0LEYzOASvO4SzOHJststSPdw8rhJ6Oh0rlocvjra+zsxNbPZQMssu2X5kvgKI4t+hWR39z/I0wvkg+CeT4SUkpcRX1TO6iQZ8uSOO/BhnOmDe5rSuP5SvZW/2J7w6sjjRlo8gcwKBgDAuFA0mc8Z6lJIQ5qiN8rL8qMtKoUOxFbM7k+EN/RBXwOlIH4k9ygwh5PLEwbC+V7TA5W+1oyOyRv6r6cqAlnCbS+lhioHB/W8c4ifFVgXSH4QmXUyRIdLrjYplT3I9RW0zY3Z+OpSXd2HhI0ieBRkteeJUHZmljTDYf0Iib7+tAoGATbQQ1b4cskM2iQw60/35+uTuW/2ZQ0ysJ7zg3gKgEU4GMNK6eC9KZbqjO4gEJ2Lk6E5W051HOHnc8C97cU69qqE2uw8zm9QqZJpG2S+HIfb6DpMag0JLL7lu/uOCokWYCL3x6Rg7iNEbt7PpArsr51oZQ4AdJFVXhuggfNGTIlcCgYEAtdRuV5P8x8U3l5Yi52ajnjrySaqIQOolI+4gp4nIK6KbwkJi092VoOC02qIQ87uq+98Zcp/X8BnfaoH3/NfsF9eUwYzYqRyvdgE6OrDmg6gvPpxzxPNpPZ58AIdO0uxmS4zGqi3i532piuLo5fBFC/gFfuDBLiAhgHyGkHfUJ2c=";
+		Map<String, String> keyMap = CodecUtil.initRSAKey(1024);
+		String publicKeyStr = keyMap.get("publicKey");
+		String privateKeyStr = keyMap.get("privateKey");
 		System.out.println("public-->[" + publicKeyStr + "]");
 		System.out.println("private-->[" + privateKeyStr + "]");
 		System.out.println("明文-->[" + data + "]");
