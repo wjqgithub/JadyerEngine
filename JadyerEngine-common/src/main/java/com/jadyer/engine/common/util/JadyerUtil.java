@@ -72,7 +72,8 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * 玄玉的开发工具类
- * @version v3.6
+ * @version v3.7
+ * @version v3.7-->add method of <code>escapeEmoji()</code> for escape Emoji to *
  * @history v3.6-->add method of <code>bytesToHex()</code> for convert byte to hex
  * @history v3.5-->增加requestToBean()用于将HttpServletRequest参数值转为JavaBean的方法
  * @history v3.4-->增加extractHttpServletRequestMessage用于提取HTTP请求完整报文的两个方法
@@ -771,8 +772,8 @@ public final class JadyerUtil {
 	public static String rightPadUseByte(String str){
 		return rightPadUseByte(str, 100, 0, "UTF-8");
 	}
-	
-	
+
+
 	/**
 	 * 字符串右补字节
 	 * @see 若str对应的byte[]长度不小于size,则按照size截取str对应的byte[],而非原样返回str
@@ -793,8 +794,8 @@ public final class JadyerUtil {
 		}
 		return getString(destByte, charset);
 	}
-	
-	
+
+
 	/**
 	 * 字符串左补字节
 	 * @see 该方法默认采用0x00左补字节
@@ -803,8 +804,8 @@ public final class JadyerUtil {
 	public static String leftPadUseByte(String str, int size, String charset){
 		return leftPadUseByte(str, size, 0, "UTF-8");
 	}
-	
-	
+
+
 	/**
 	 * 字符串左补字节
 	 * @see 若str对应的byte[]长度不小于size,则按照size截取str对应的byte[],而非原样返回str
@@ -823,8 +824,8 @@ public final class JadyerUtil {
 		}
 		return getString(destByte, charset);
 	}
-	
-	
+
+
 	/**
 	 * 转义HTML字符串
 	 * @see 对输入参数中的敏感字符进行过滤替换,防止用户利用JavaScript等方式输入恶意代码
@@ -866,8 +867,30 @@ public final class JadyerUtil {
 		input = input.replaceAll("'", "&apos;");
 		return input;
 	}
-	
-	
+
+
+	/**
+	 * 转义emoji表情为*星号
+	 * @see 现在的APP或者微信已经广泛支持Emoji表情了,但是MySQL的UTF8编码对Emoji的支持却不是很好
+	 * @see 所以通常会遇到这样的异常提示Incorrect string value: '\xF0\x90\x8D\x83...' for column
+	 * @see 原因是MySQL的UTF8编码最多能支持3个字节,而Emoji表情字符所使用的UTF8编码很多都是4个甚至6个字节
+	 * @see 解决方案有两种
+	 * @see 1)使用utf8mb4的MySQL编码存储表情字符(不过在浏览器显示时,这些表情字符显示的是一个空心的方框)
+	 * @see 2)过滤表情字符
+	 * @see 第一种方案需要注意很多,比如MySQL版本、MySQL的表和数据库配置、MySQL Connector的版本等等
+	 * @see 所以写了这个第二种方案的转义方法
+	 * @create Apr 7, 2016 11:41:35 AM
+	 * @author 玄玉<http://blog.csdn.net/jadyer>
+	 */
+	public static String escapeEmoji(String emoji){
+		if(StringUtils.isNotBlank(emoji)){
+			return emoji.replaceAll("[\\ud800\\udc00-\\udbff\\udfff\\ud800-\\udfff]", "*");
+		}else{
+			return emoji;
+		}
+	}
+
+
 	/**
 	 * 格式化XML格式的字符串
 	 * @see 格式化失败时返回的Map中,isPrettySuccess=no,prettyResultStr=堆栈信息
@@ -896,7 +919,7 @@ public final class JadyerUtil {
 		return resultMap;
 	}
 
-	
+
 	/**
 	 * 抓屏方法
 	 * @see 该方法抓的是全屏,并且当传入的fileName参数为空时会将抓屏图片默认保存到用户桌面上
@@ -933,8 +956,8 @@ public final class JadyerUtil {
 		}
 		return true;
 	}
-	
-	
+
+
 	/**
 	 * 提取堆栈信息
 	 * @see 等价于org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace(cause);
