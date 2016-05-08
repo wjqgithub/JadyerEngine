@@ -4,8 +4,8 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.jadyer.engine</groupId>
-		<artifactId>JadyerEngine-parent</artifactId>
-		<version>1.0.5</version>
+		<artifactId>JadyerEngine</artifactId>
+		<version>1.1.0</version>
 	</parent>
 	<artifactId>JadyerEngine-common</artifactId>
 

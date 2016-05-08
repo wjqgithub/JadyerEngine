@@ -4,15 +4,15 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.jadyer.engine</groupId>
-		<artifactId>JadyerEngine-parent</artifactId>
-		<version>1.0.5</version>
+		<artifactId>JadyerEngine</artifactId>
+		<version>1.1.0</version>
 	</parent>
 	<artifactId>JadyerEngine-web</artifactId>
 	<packaging>war</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<engine.version>1.0.5</engine.version>
+		<engine.version>1.1.0</engine.version>
 	</properties>
 
 	<dependencies>

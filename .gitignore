@@ -45,6 +45,8 @@ hs_err_pid*
 .classpath
 .myeclipse
 .mymetadata
+.idea
+*.iml
 # 忽略target/目录下的所有文件
 target/
 bin/
