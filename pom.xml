@@ -14,35 +14,35 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<Jadyer-tag.version>1.0</Jadyer-tag.version>
-		<org.springframework.version>4.2.0.RELEASE</org.springframework.version>
-		<aspectj.version>1.8.6</aspectj.version>
-		<cglib.version>3.1</cglib.version>
-		<org.springframework.data.jpa.version>1.8.2.RELEASE</org.springframework.data.jpa.version>
-		<mysql.driver.version>5.1.36</mysql.driver.version>
-		<hibernate.validator.version>5.2.1.Final</hibernate.validator.version>
-		<hibernate.entitymanager.version>4.3.11.Final</hibernate.entitymanager.version>
-		<apache.commons-io.version>2.4</apache.commons-io.version>
-		<apache.commons-net.version>3.3</apache.commons-net.version>
+		<org.springframework.version>4.2.6.RELEASE</org.springframework.version>
+		<aspectj.version>1.8.9</aspectj.version>
+		<cglib.version>3.2.2</cglib.version>
+		<org.springframework.data.jpa.version>1.10.2.RELEASE</org.springframework.data.jpa.version>
+		<mysql.driver.version>5.1.38</mysql.driver.version>
+		<hibernate.validator.version>5.2.4.Final</hibernate.validator.version>
+		<hibernate.entitymanager.version>5.1.0.Final</hibernate.entitymanager.version>
+		<apache.commons-io.version>2.5</apache.commons-io.version>
+		<apache.commons-net.version>3.4</apache.commons-net.version>
 		<apache.commons-lang3.version>3.4</apache.commons-lang3.version>
 		<apache.commons-codec.version>1.10</apache.commons-codec.version>
 		<apache.commons-logging.version>1.2</apache.commons-logging.version>
 		<apache.commons-fileupload.version>1.3.1</apache.commons-fileupload.version>
-		<apache.poi.version>3.12</apache.poi.version>
-		<apache.mina.version>2.0.9</apache.mina.version>
+		<apache.poi.version>3.14</apache.poi.version>
+		<apache.mina.version>2.0.13</apache.mina.version>
 		<apache.log4j.version>1.2.17</apache.log4j.version>
 		<apache.httpclient.version>4.2.1</apache.httpclient.version>
-		<google.guava.version>18.0</google.guava.version>
+		<google.guava.version>19.0</google.guava.version>
 		<google.guice.version>4.0</google.guice.version>
-		<alibaba.druid.version>1.0.15</alibaba.druid.version>
-		<alibaba.fastjson.version>1.2.7</alibaba.fastjson.version>
+		<alibaba.druid.version>1.0.18</alibaba.druid.version>
+		<alibaba.fastjson.version>1.2.11</alibaba.fastjson.version>
 		<jsp.jstl.version>1.2.1</jsp.jstl.version>
 		<jsp.standard.version>1.1.2</jsp.standard.version>
 		<ZXing.version>2.2</ZXing.version>
 		<dom4j.version>1.6.1</dom4j.version>
 		<jsch.version>0.1.53</jsch.version>
 		<jcifs.version>1.3.17</jcifs.version>
-		<quartz.version>2.2.1</quartz.version>
-		<bouncycastle.version>1.53</bouncycastle.version>
+		<quartz.version>2.2.3</quartz.version>
+		<bouncycastle.version>1.54</bouncycastle.version>
 	</properties>
 
 	<dependencyManagement>
