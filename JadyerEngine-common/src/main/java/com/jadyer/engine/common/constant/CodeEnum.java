@@ -1,6 +1,7 @@
 package com.jadyer.engine.common.constant;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -16,7 +17,7 @@ public enum CodeEnum {
 	private final int code;
 	private final String message;
 	
-	private CodeEnum(int _code, String _message){
+	CodeEnum(int _code, String _message){
 		this.code = _code;
 		this.message = _message;
 	}
@@ -66,10 +67,8 @@ public enum CodeEnum {
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	public List<CodeEnum> getAllEnum(){
-		List<CodeEnum> list = new ArrayList<CodeEnum>();
-		for(CodeEnum _enum : values()){
-			list.add(_enum);
-		}
+		List<CodeEnum> list = new ArrayList<>();
+		Collections.addAll(list, values());
 		return list;
 	}
 
@@ -80,7 +79,7 @@ public enum CodeEnum {
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
 	public List<Integer> getAllEnumCode(){
-		List<Integer> list = new ArrayList<Integer>();
+		List<Integer> list = new ArrayList<>();
 		for(CodeEnum _enum : values()){
 			list.add(_enum.getCode());
 		}
