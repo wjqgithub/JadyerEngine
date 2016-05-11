@@ -1,20 +1,19 @@
 package com.jadyer.engine.test;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
+import com.jadyer.engine.web.user.User;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import org.junit.Test;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-import org.junit.Test;
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
-import com.jadyer.engine.web.user.User;
 
 public class FastjsonTest {
 	/**
@@ -47,7 +46,7 @@ public class FastjsonTest {
 		Test22 test22again = JSON.parseObject(test33msg, Test22.class);
 		System.out.println("标准Java数据类型生成的JSON解析为标准Java数据类型对象后的属性为" + ReflectionToStringBuilder.toString(test22again, ToStringStyle.MULTI_LINE_STYLE));
 	}
-	static class Test11{
+	private static class Test11{
 		private String name;
 		private String isBuy;
 		private String money;
@@ -55,29 +54,29 @@ public class FastjsonTest {
 		public String getName() {
 			return name;
 		}
-		public void setName(String name) {
+		void setName(String name) {
 			this.name = name;
 		}
 		public String getIsBuy() {
 			return isBuy;
 		}
-		public void setIsBuy(String isBuy) {
+		void setIsBuy(String isBuy) {
 			this.isBuy = isBuy;
 		}
 		public String getMoney() {
 			return money;
 		}
-		public void setMoney(String money) {
+		void setMoney(String money) {
 			this.money = money;
 		}
 		public String getCurrentTime() {
 			return currentTime;
 		}
-		public void setCurrentTime(String currentTime) {
+		void setCurrentTime(String currentTime) {
 			this.currentTime = currentTime;
 		}
 	}
-	static class Test22{
+	private static class Test22{
 		private String name;
 		private boolean isBuy;
 		private BigDecimal money;
@@ -107,7 +106,7 @@ public class FastjsonTest {
 			this.currentTime = currentTime;
 		}
 	}
-	static class Test33{
+	private static class Test33{
 		private String name;
 		private Boolean isBuy;
 		private BigDecimal money;
@@ -115,25 +114,25 @@ public class FastjsonTest {
 		public String getName() {
 			return name;
 		}
-		public void setName(String name) {
+		void setName(String name) {
 			this.name = name;
 		}
 		public Boolean getIsBuy() {
 			return isBuy;
 		}
-		public void setIsBuy(Boolean isBuy) {
+		void setIsBuy(Boolean isBuy) {
 			this.isBuy = isBuy;
 		}
 		public BigDecimal getMoney() {
 			return money;
 		}
-		public void setMoney(BigDecimal money) {
+		void setMoney(BigDecimal money) {
 			this.money = money;
 		}
 		public Date getCurrentTime() {
 			return currentTime;
 		}
-		public void setCurrentTime(Date currentTime) {
+		void setCurrentTime(Date currentTime) {
 			this.currentTime = currentTime;
 		}
 	}
@@ -146,7 +145,7 @@ public class FastjsonTest {
 	 */
 	@Test
 	public void listStringTest(){
-		List<String> dataList = new ArrayList<String>();
+		List<String> dataList = new ArrayList<>();
 		dataList.add("铁面生");
 		dataList.add("汪藏海");
 		dataList.add("解连环");
@@ -157,16 +156,16 @@ public class FastjsonTest {
 			System.out.println("解析到["+len+"]个字符串,第["+(i+1)+"]个字符串为-->" + list.get(i));
 		}
 		System.out.println("-------------------------------------------------------------------");
-		Map<String, Object> map11 = new HashMap<String, Object>();
+		Map<String, Object> map11 = new HashMap<>();
 		map11.put("鬼吹灯", "张佛爷");
 		map11.put("藏海花", "张起灵");
-		Map<String, Object> map22 = new HashMap<String, Object>();
+		Map<String, Object> map22 = new HashMap<>();
 		map22.put("青蚨门人", 1);
 		map22.put("国术通神", 2);
-		Map<String, Object> map33 = new HashMap<String, Object>();
+		Map<String, Object> map33 = new HashMap<>();
 		map33.put("盗墓笔记", "铁面生");
 		map33.put("三国演义", "曹孟德");
-		List<Map<String,Object>> datalist = new ArrayList<Map<String,Object>>();
+		List<Map<String,Object>> datalist = new ArrayList<>();
 		datalist.add(map11);
 		datalist.add(map22);
 		datalist.add(map33);
@@ -198,7 +197,7 @@ public class FastjsonTest {
 		user33.setId(33);
 		user33.setUsername("解连环");
 		user33.setPassword("02200061");
-		List<User> dataList = new ArrayList<User>();
+		List<User> dataList = new ArrayList<>();
 		dataList.add(user11);
 		dataList.add(user22);
 		dataList.add(user33);
@@ -231,11 +230,11 @@ public class FastjsonTest {
 		user33.setId(33);
 		user33.setUsername("解连环");
 		user33.setPassword("02200061");
-		List<User> dataList = new ArrayList<User>();
+		List<User> dataList = new ArrayList<>();
 		dataList.add(user11);
 		dataList.add(user22);
 		dataList.add(user33);
-		Map<String, Object> dataMap = new HashMap<String, Object>();
+		Map<String, Object> dataMap = new HashMap<>();
 		dataMap.put("comment", "这是测试java.util.Map<String,List<Object>>对象的生成与解析JSON");
 		dataMap.put("data", dataList);
 		String jsonData = JSON.toJSONString(dataMap);
@@ -258,6 +257,47 @@ public class FastjsonTest {
 		System.out.println(dataMap.get("SERVICE").get("SERVICE_BODY").get("RESPONSE"));
 		System.out.println(JSONObject.parseObject(dataMap.get("SERVICE").get("SERVICE_HEADER").get("SERV_RESPONSE")).get("CODE"));
 		System.out.println(JSONObject.parseObject(dataMap.get("SERVICE").get("SERVICE_BODY").get("RESPONSE")).get("APP_NO"));
+	}
+
+
+	/**
+	 * 测试json解析为子类对象时，是否会解析包含的父类属性
+	 */
+	@Test
+	public void javabeanParse(){
+		UserChild uc = new UserChild();
+		uc.setId(2);
+		uc.setName("玄玉");
+		uc.setSex("M");
+		String jsonStr = JSON.toJSONString(uc);
+		System.out.println("生成了-->" + jsonStr);
+		UserChild userChild = JSON.parseObject(jsonStr, UserChild.class);
+		System.out.println("解析到-->" + ReflectionToStringBuilder.toString(userChild, ToStringStyle.MULTI_LINE_STYLE));
+	}
+	static class UserParent{
+		private int id;
+		private String name;
+		public int getId() {
+			return id;
+		}
+		void setId(int id) {
+			this.id = id;
+		}
+		public String getName() {
+			return name;
+		}
+		void setName(String name) {
+			this.name = name;
+		}
+	}
+	private static class UserChild extends UserParent {
+		private String sex;
+		public String getSex() {
+			return sex;
+		}
+		void setSex(String sex) {
+			this.sex = sex;
+		}
 	}
 //	/**
 //	 * 一个关于Jackson序列化与反序列化Map里面包含普通对象和List的JSON
