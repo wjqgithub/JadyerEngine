@@ -1,5 +1,22 @@
 package com.jadyer.engine.test;
 
+import com.jadyer.engine.common.util.CodecUtil;
+import com.jadyer.engine.common.util.FtpUtil;
+import com.jadyer.engine.common.util.HttpUtil;
+import com.jadyer.engine.common.util.ImageUtil;
+import com.jadyer.engine.common.util.ValidatorUtil;
+import com.jadyer.engine.common.util.tmp.poi.ExcelProperty;
+import com.jadyer.engine.common.util.tmp.poi.ExcelUtil;
+import com.jadyer.engine.common.util.tmp.poi.annotation.ExcelHeader;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
+import org.hibernate.validator.constraints.NotBlank;
+import org.junit.Assert;
+import org.junit.Test;
+
+import javax.validation.constraints.Min;
+import javax.validation.constraints.Pattern;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,24 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
-
-import javax.validation.constraints.Min;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateFormatUtils;
-import org.hibernate.validator.constraints.NotBlank;
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.jadyer.engine.common.util.CodecUtil;
-import com.jadyer.engine.common.util.FtpUtil;
-import com.jadyer.engine.common.util.HttpUtil;
-import com.jadyer.engine.common.util.ImageUtil;
-import com.jadyer.engine.common.util.ValidatorUtil;
-import com.jadyer.engine.common.util.tmp.poi.ExcelProperty;
-import com.jadyer.engine.common.util.tmp.poi.ExcelUtil;
-import com.jadyer.engine.common.util.tmp.poi.annotation.ExcelHeader;
 
 public class UtilTest {
 	@Test
@@ -302,7 +301,18 @@ public class UtilTest {
 		User user = new User();
 		//user.setName("铁面生");
 		String validateMsg = ValidatorUtil.validate(user);
-		System.out.print("验证结果为[" + validateMsg + "]-->");
+		System.out.print("User验证结果为[" + validateMsg + "]-->");
+		if(StringUtils.isBlank(validateMsg)){
+			System.out.println("验证通过");
+		}else{
+			System.out.println("验证未通过");
+		}
+		System.out.println("-------------------------------");
+		UserDetail userDetail = new UserDetail();
+		userDetail.setId(2);
+		//userDetail.setSex("M");
+		validateMsg = ValidatorUtil.validate(userDetail);
+		System.out.print("UserDetail验证[" + validateMsg + "]-->");
 		if(StringUtils.isBlank(validateMsg)){
 			System.out.println("验证通过");
 		}else{
@@ -325,6 +335,17 @@ public class UtilTest {
 		}
 		public void setName(String name) {
 			this.name = name;
+		}
+	}
+	class UserDetail extends User{
+		@NotBlank
+		@Pattern(regexp="^M|F$", message="性别只能传M或F")
+		private String sex;
+		public String getSex() {
+			return sex;
+		}
+		public void setSex(String sex) {
+			this.sex = sex;
 		}
 	}
 }
