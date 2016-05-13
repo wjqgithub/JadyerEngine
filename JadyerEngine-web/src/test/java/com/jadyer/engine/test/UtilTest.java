@@ -4,6 +4,7 @@ import com.jadyer.engine.common.util.CodecUtil;
 import com.jadyer.engine.common.util.FtpUtil;
 import com.jadyer.engine.common.util.HttpUtil;
 import com.jadyer.engine.common.util.ImageUtil;
+import com.jadyer.engine.common.util.JadyerUtil;
 import com.jadyer.engine.common.util.ValidatorUtil;
 import com.jadyer.engine.common.util.tmp.poi.ExcelProperty;
 import com.jadyer.engine.common.util.tmp.poi.ExcelUtil;
@@ -236,6 +237,12 @@ public class UtilTest {
 		String data44 = CodecUtil.buildRSASignByPrivateKey(data, privateKeyStr);
 		System.out.println("私钥签名-->[" + data44 +"]");
 		System.out.println("公钥验签-->[" + CodecUtil.buildRSAverifyByPublicKey(data, publicKeyStr, data44) +"]");
+	}
+
+
+	@Test
+	public void jadyerUtilGetDetailDateTest(){
+		Assert.assertEquals("2016-05-13", JadyerUtil.getDetailDate("20160513"));
 	}
 
 

@@ -25,12 +25,21 @@
  */
 package com.jadyer.engine.common.util;
 
-import java.awt.AWTException;
-import java.awt.Desktop;
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.awt.Robot;
-import java.awt.Toolkit;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+
+import javax.imageio.ImageIO;
+import javax.servlet.http.HttpServletRequest;
+import javax.swing.filechooser.FileSystemView;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -46,6 +55,7 @@ import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.NumberFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,24 +65,11 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
-import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletRequest;
-import javax.swing.filechooser.FileSystemView;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * 玄玉的开发工具类
- * @version v3.7
+ * @version v3.8
+ * @version v3.8-->修正部分细节并增加<code>getDetailDate(dateStr)</code>方法
  * @version v3.7-->add method of <code>escapeEmoji()</code> for escape Emoji to *
  * @history v3.6-->add method of <code>bytesToHex()</code> for convert byte to hex
  * @history v3.5-->增加requestToBean()用于将HttpServletRequest参数值转为JavaBean的方法
@@ -122,35 +119,10 @@ public final class JadyerUtil {
 
 	/**
 	 * 获取流水号
-	 * @see 若欲指定返回值的长度or是否全由数字组成等,you can call {@link JadyerUtil#getSysJournalNo(int, boolean)}
-	 * @return 长度为20的全数字
 	 */
 	public static String buildSerialNo(){
-		//return RandomStringUtils.randomNumeric(20); //RandomStringUtils comes from commons-lang3.jar
-		return buildSerialNo(20, true);
-	}
-	
-	
-	/**
-	 * 获取流水号
-	 * @param length   指定流水号长度
-	 * @param toNumber 指定流水号是否全由数字组成
-	 */
-	public static String buildSerialNo(int length, boolean isNumber){
-		//replaceAll()之后返回的是一个由十六进制形式组成的且长度为32的字符串
-		String uuid = UUID.randomUUID().toString().replaceAll("-", "");
-		if(uuid.length() > length){
-			uuid = uuid.substring(0, length);
-		}else if(uuid.length() < length){
-			for(int i=0; i<length-uuid.length(); i++){
-				uuid = uuid + Math.round(Math.random()*9);
-			}
-		}
-		if(isNumber){
-			return uuid.replaceAll("a", "1").replaceAll("b", "2").replaceAll("c", "3").replaceAll("d", "4").replaceAll("e", "5").replaceAll("f", "6");
-		}else{
-			return uuid;
-		}
+		//RandomStringUtils.randomAlphanumeric(20);
+		return RandomStringUtils.randomNumeric(20);
 	}
 
 
@@ -218,7 +190,7 @@ public final class JadyerUtil {
 		for(Field field : obj.getClass().getDeclaredFields()){
 			//构造getter方法
 			String methodName = "get" + StringUtils.capitalize(field.getName());
-			Object fieldValue = null;
+			Object fieldValue;
 			try{
 				//执行getter方法,获取其返回值
 				fieldValue = obj.getClass().getDeclaredMethod(methodName).invoke(obj);
@@ -421,7 +393,6 @@ public final class JadyerUtil {
 					beanClass.getMethod(methodName, String.class).invoke(bean, URLDecode(request.getParameter(field.getName())));
 				}catch(Exception e){
 					//ignore exception
-					continue;
 				}
 			}
 			return bean;
@@ -510,6 +481,20 @@ public final class JadyerUtil {
 		Calendar calendar = Calendar.getInstance();
 		calendar.add(Calendar.DATE, -1);
 		return new SimpleDateFormat("yyyyMMdd").format(calendar.getTime());
+	}
+
+
+	/**
+	 * 获取格式化的详细日期
+	 * @param dateStr yyyyMMdd格式的日期字符串
+	 * @return yyyy-MM-dd格式的日期字符串
+	 */
+	public static String getDetailDate(String dateStr){
+		try {
+			return String.format("%tF", DateUtils.parseDate(dateStr, "yyyyMMdd"));
+		} catch (ParseException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	
@@ -668,7 +653,7 @@ public final class JadyerUtil {
 			return amount;
 		}
 		//传入的金额字符串代表的是一个整数
-		if(-1 == amount.indexOf(".")){
+		if(!amount.contains(".")){
 			return Integer.parseInt(amount) * 100 + "";
 		}
 		//传入的金额字符串里面含小数点-->取小数点前面的字符串,并将之转换成单位为分的整数表示
@@ -704,7 +689,7 @@ public final class JadyerUtil {
 		if(isEmpty(amount)){
 			return amount;
 		}
-		if(-1 == amount.indexOf(".")){
+		if(!amount.contains(".")){
 			return Integer.parseInt(amount) * 100 + "";
 		}
 		int money_fen = Integer.parseInt(amount.substring(0, amount.indexOf("."))) * 100;
@@ -751,7 +736,7 @@ public final class JadyerUtil {
 		if(isEmpty(amount)){
 			return amount;
 		}
-		if(amount.indexOf(".") > -1){
+		if(amount.contains(".")){
 			return amount;
 		}
 		if(amount.length() == 1){
@@ -785,7 +770,7 @@ public final class JadyerUtil {
 	 */
 	public static String rightPadUseByte(String str, int size, int padStrByASCII, String charset){
 		byte[] srcByte = str.getBytes();
-		byte[] destByte = null;
+		byte[] destByte;
 		if(srcByte.length >= size){
 			destByte = Arrays.copyOf(srcByte, size);
 		}else{
@@ -899,11 +884,11 @@ public final class JadyerUtil {
 	 * @return 返回的Map中有两个字符串的key-value,分别为isPrettySuccess和prettyResultStr
 	 */
 	public static Map<String, String> formatXMLString(String xmlString) {
-		Map<String, String> resultMap = new HashMap<String, String>();
+		Map<String, String> resultMap = new HashMap<>();
 		TransformerFactory transformerFactory = TransformerFactory.newInstance();
 		transformerFactory.setAttribute("indent-number", new Integer(2));
 		StringWriter writer = new StringWriter();
-		Transformer transformer = null;
+		Transformer transformer;
 		try {
 			transformer = transformerFactory.newTransformer();
 			transformer.setOutputProperty("{http://xml.apache.org/xalan}indent-amount", "2");
@@ -987,7 +972,7 @@ public final class JadyerUtil {
 	public static String extractHttpServletRequestHeaderMessage(HttpServletRequest request){
 		StringBuilder sb = new StringBuilder();
 		sb.append(request.getMethod()).append(" ").append(request.getRequestURI() + (null==request.getQueryString()?"":"?"+request.getQueryString())).append(" ").append(request.getProtocol()).append("\n");
-		String headerName = null;
+		String headerName;
 		for(Enumeration<String> obj = request.getHeaderNames(); obj.hasMoreElements();){
 			headerName = obj.nextElement();
 			sb.append(headerName).append(": ").append(request.getHeader(headerName)).append("\n");
