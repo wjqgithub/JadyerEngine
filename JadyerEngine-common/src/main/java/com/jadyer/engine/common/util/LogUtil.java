@@ -1,7 +1,7 @@
 package com.jadyer.engine.common.util;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 日志工具类
@@ -44,12 +44,12 @@ public final class LogUtil {
 
 	//自定义线程范围内共享的对象
 	//即它会针对不同线程分别创建独立的对象,此时每个线程得到的将是自己的实例,各线程间得到的实例没有任何关联
-	private static ThreadLocal<Log> currentLoggerMap = new ThreadLocal<Log>();
+	private static ThreadLocal<Logger> currentLoggerMap = new ThreadLocal<>();
 
 	//定义日志记录器
-	private static Log defaultLogger = LogFactory.getLog("defaultLogger");
-	private static Log webLogger = LogFactory.getLog("webLogger");
-	private static Log wapLogger = LogFactory.getLog("wapLogger");
+	private static Logger defaultLogger = LoggerFactory.getLogger("defaultLogger");
+	private static Logger webLogger = LoggerFactory.getLogger("webLogger");
+	private static Logger wapLogger = LoggerFactory.getLogger("wapLogger");
 
 	/**
 	 * 获取当前线程中的日志记录器
@@ -59,12 +59,12 @@ public final class LogUtil {
 	 * @see 我博客里对此有记载http://blog.csdn.net/jadyer/article/details/7338071
 	 * @see Struts2就是这么做的,详见com.opensymphony.xwork2.ActionContex第43和166行源码
 	 */
-	public static Log getLogger() {
-		Log log = currentLoggerMap.get();
-		if(null == log){
+	public static Logger getLogger() {
+		Logger logger = currentLoggerMap.get();
+		if(null == logger){
 			return defaultLogger;
 		}else{
-			return log;
+			return logger;
 		}
 	}
 
@@ -93,13 +93,13 @@ public final class LogUtil {
 	/**
 	 * 获取Web端日志记录器
 	 */
-	public static Log getWebLogger() {
-		Log log = currentLoggerMap.get();
-		if(null == log){
+	public static Logger getWebLogger() {
+		Logger logger = currentLoggerMap.get();
+		if(null == logger){
 			currentLoggerMap.set(webLogger);
 			return webLogger;
 		}else{
-			return log;
+			return logger;
 		}
 	}
 
@@ -107,13 +107,13 @@ public final class LogUtil {
 	/**
 	 * 获取Wap端日志记录器
 	 */
-	public static Log getWapLogger() {
-		Log log = currentLoggerMap.get();
-		if(null == log){
+	public static Logger getWapLogger() {
+		Logger logger = currentLoggerMap.get();
+		if(null == logger){
 			currentLoggerMap.set(wapLogger);
 			return wapLogger;
 		}else{
-			return log;
+			return logger;
 		}
 	}
 }

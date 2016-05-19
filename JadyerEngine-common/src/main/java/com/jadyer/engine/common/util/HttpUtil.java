@@ -1,34 +1,9 @@
 package com.jadyer.engine.common.util;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
+import com.jadyer.engine.common.constant.CodeEnum;
+import com.jadyer.engine.common.exception.EngineException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
@@ -57,8 +32,31 @@ import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
-import com.jadyer.engine.common.constant.CodeEnum;
-import com.jadyer.engine.common.exception.EngineException;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 封装了发送HTTP请求的工具类
@@ -122,7 +120,8 @@ import com.jadyer.engine.common.exception.EngineException;
  * @see    http://qzone-music.qq.com/fcg-bin/fcg_music_fav_getinfo.fcg?dirinfo=0&dirid=1&uin=QQ号&p=0.519638272547262&g_tk=1284234856
  * @see    http://v5.pc.duomi.com/search-ajaxsearch-searchall?kw=关键字&pi=页码&pz=每页音乐数
  * @see -----------------------------------------------------------------------------------------------------------
- * @version v2.5
+ * @version v2.6
+ * @history v2.6-->修复部分细节，增加入参出参的日志打印
  * @history v2.5-->修复<code>postWithUpload()</code>方法的<code>Map<String, String> params</code>参数传入null时无法上传文件的BUG
  * @history v2.4-->重命名GET和POST方法名,全局定义通信报文编码和连接读取超时时间,通信发生异常时修改为直接抛出RuntimeException
  * @history v2.3-->增加<code>sendPostRequestWithUpload()</code><code>sendPostRequestWithDownload()</code>方法,用于上传和下载文件
@@ -137,7 +136,7 @@ import com.jadyer.engine.common.exception.EngineException;
  * @history v1.2-->新增<code>sendPostRequest()</code>方法,用于发送HTTP协议报文体为任意字符串的POST请求
  * @history v1.1-->新增<code>sendPostSSLRequest()</code>方法,用于发送HTTPS的POST请求
  * @history v1.0-->新建<code>sendGetRequest()</code>和<code>sendPostRequest()</code>方法
- * @update Sep 16, 2015 3:59:14 PM
+ * @update 2016/5/19 12:33
  * @create Feb 1, 2012 3:02:27 PM
  * @author 玄玉<http://blog.csdn.net/jadyer>
  */
@@ -145,7 +144,9 @@ public final class HttpUtil {
 	private static final String DEFAULT_CHARSET = "UTF-8";          //设置默认通信报文编码为UTF-8
 	private static final int DEFAULT_CONNECTION_TIMEOUT = 1000 * 2; //设置默认连接超时为2s
 	private static final int DEFAULT_SO_TIMEOUT = 1000 * 60;        //设置默认读取超时为60s
+
 	private HttpUtil(){}
+
 
 	/**
 	 * 发送HTTP_GET请求
@@ -223,6 +224,7 @@ public final class HttpUtil {
 	 * @return 远程主机响应正文
 	 */
 	public static String post(String reqURL, String reqData){
+		LogUtil.getLogger().info("请求{}的报文为-->>[{}]", reqURL, reqData);
 		String respData = "";
 		HttpClient httpClient = new DefaultHttpClient();
 		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
@@ -238,6 +240,7 @@ public final class HttpUtil {
 			if(null != entity){
 				respData = EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset());
 			}
+			LogUtil.getLogger().info("请求{}得到应答<<--[{}]", reqURL, respData);
 			return respData;
 		}catch(ConnectTimeoutException cte){
 			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
@@ -265,6 +268,7 @@ public final class HttpUtil {
 	 * @return 远程主机响应正文
 	 */
 	public static String postTLS(String reqURL, Map<String, String> params){
+		LogUtil.getLogger().info("请求{}的报文为-->>{}", reqURL, JadyerUtil.buildStringFromMap(params));
 		String respData = "";
 		HttpClient httpClient = new DefaultHttpClient();
 		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
@@ -303,7 +307,7 @@ public final class HttpUtil {
 			//因为在查看了HttpClient的源码后发现,UrlEncodedFormEntity所采用的默认CONTENT_TYPE就是application/x-www-form-urlencoded
 			//httpPost.setHeader(HTTP.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=" + encodeCharset);
 			if(null != params){
-				List<NameValuePair> formParams = new ArrayList<NameValuePair>();
+				List<NameValuePair> formParams = new ArrayList<>();
 				for(Map.Entry<String,String> entry : params.entrySet()){
 					formParams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
 				}
@@ -314,6 +318,7 @@ public final class HttpUtil {
 			if(null != entity){
 				respData = EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset());
 			}
+			LogUtil.getLogger().info("请求{}得到应答<<--[{}]", reqURL, respData);
 			return respData;
 		}catch(ConnectTimeoutException cte){
 			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
@@ -343,6 +348,7 @@ public final class HttpUtil {
 	 * @return 远程主机响应正文
 	 */
 	public static String postWithUpload(String reqURL, String filename, InputStream is, String fileBodyName, Map<String, String> params){
+		LogUtil.getLogger().info("请求{}的报文为-->>{}", reqURL, JadyerUtil.buildStringFromMap(params));
 		String respData = "";
 		HttpClient httpClient = new DefaultHttpClient();
 		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
@@ -365,6 +371,7 @@ public final class HttpUtil {
 			if(null != entity){
 				respData = EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset());
 			}
+			LogUtil.getLogger().info("请求{}得到应答<<--[{}]", reqURL, respData);
 			return respData;
 		}catch(ConnectTimeoutException cte){
 			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
@@ -395,7 +402,8 @@ public final class HttpUtil {
 	 * @return 应答Map有两个key,isSuccess--yes or no,fullPath--isSuccess为yes时返回文件完整保存路径,failReason--isSuccess为no时返回下载失败的原因
 	 */
 	public static Map<String, String> postWithDownload(String reqURL, Map<String, String> params){
-		Map<String, String> resultMap = new HashMap<String, String>();
+		LogUtil.getLogger().info("请求{}的报文为-->>{}", reqURL, JadyerUtil.buildStringFromMap(params));
+		Map<String, String> resultMap = new HashMap<>();
 		HttpClient httpClient = new DefaultHttpClient();
 		httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
 		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, DEFAULT_SO_TIMEOUT);
@@ -406,7 +414,7 @@ public final class HttpUtil {
 			//因为在查看了HttpClient的源码后发现,UrlEncodedFormEntity所采用的默认CONTENT_TYPE就是application/x-www-form-urlencoded
 			//httpPost.setHeader(HTTP.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=" + encodeCharset);
 			if(null != params){
-				List<NameValuePair> formParams = new ArrayList<NameValuePair>();
+				List<NameValuePair> formParams = new ArrayList<>();
 				for(Map.Entry<String,String> entry : params.entrySet()){
 					formParams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
 				}
@@ -414,7 +422,11 @@ public final class HttpUtil {
 			}
 			HttpResponse response = httpClient.execute(httpPost);
 			entity = response.getEntity();
-			if(null!=entity && entity.getContentType().getValue().startsWith(ContentType.APPLICATION_OCTET_STREAM.getMimeType())){
+			if(null==entity || null==entity.getContentType() || (!entity.getContentType().getValue().startsWith(ContentType.APPLICATION_OCTET_STREAM.getMimeType())) && !entity.getContentType().getValue().contains("image/jpeg")){
+				//文件下载失败
+				resultMap.put("isSuccess", "no");
+				resultMap.put("failReason", null==entity ? "" : EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset()));
+			}else{
 				//文件下载成功
 				//respData = IOUtils.toByteArray(entity.getContent());
 				String filename = null;
@@ -438,17 +450,14 @@ public final class HttpUtil {
 					}
 				}
 				if(StringUtils.isBlank(filename)){
-					filename = UUID.randomUUID().toString().replaceAll("-", "");
+					filename = RandomStringUtils.randomNumeric(16);
 				}
 				File _file = new File(System.getProperty("java.io.tmpdir") + "/" + filename);
 				FileUtils.copyInputStreamToFile(entity.getContent(), _file);
 				resultMap.put("isSuccess", "yes");
 				resultMap.put("fullPath", _file.getCanonicalPath());
-			}else{
-				//文件下载失败
-				resultMap.put("isSuccess", "no");
-				resultMap.put("failReason", EntityUtils.toString(entity, ContentType.getOrDefault(entity).getCharset()));
 			}
+			LogUtil.getLogger().info("请求{}得到应答<<--{}", reqURL, JadyerUtil.buildStringFromMap(resultMap));
 			return resultMap;
 		}catch(ConnectTimeoutException cte){
 			throw new EngineException(CodeEnum.SYSTEM_BUSY.getCode(), "请求通信[" + reqURL + "]时连接超时", cte);
@@ -481,12 +490,12 @@ public final class HttpUtil {
 	 * @param reqData 请求报文,多个参数则应拼接为param11=value11&22=value22&33=value33的形式
 	 * @return 应答Map有两个key,respData--HTTP响应报文体,respFullData--HTTP响应完整报文
 	 */
-	public static Map<String, String> postByJava(String reqURL, String reqData) {
-		Map<String, String> respMap = new HashMap<String, String>();
+	private static Map<String, String> postByJava(String reqURL, String reqData) {
+		Map<String, String> respMap = new HashMap<>();
 		HttpURLConnection httpURLConnection = null;
 		OutputStream out = null; //写
 		InputStream in = null;   //读
-		String respData = "";    //HTTP响应报文体
+		String respData;         //HTTP响应报文体
 		String respCharset = DEFAULT_CHARSET;
 		try{
 			URL sendUrl = new URL(reqURL);
@@ -558,7 +567,7 @@ public final class HttpUtil {
 			in = httpURLConnection.getInputStream();
 			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 			byte[] buff = new byte[1024];
-			int len = -1;
+			int len;
 			while((len=in.read(buff)) != -1){
 				buffer.write(buff, 0, len);
 			}
@@ -590,7 +599,6 @@ public final class HttpUtil {
 			}
 			if(null != httpURLConnection){
 				httpURLConnection.disconnect();
-				httpURLConnection = null;
 			}
 		}
 	}
@@ -603,7 +611,7 @@ public final class HttpUtil {
 	 * @param reqParams  请求报文
 	 * @return 应答Map有两个key,reqFullData--HTTP请求完整报文,respFullData--HTTP响应完整报文
 	 */
-	public static Map<String, String> postBySocket(String reqURL, Map<String, String> reqParams){
+	private static Map<String, String> postBySocket(String reqURL, Map<String, String> reqParams){
 		StringBuilder reqData = new StringBuilder();
 		for(Map.Entry<String, String> entry : reqParams.entrySet()){
 			reqData.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
@@ -671,11 +679,11 @@ public final class HttpUtil {
 	 * @param reqData 请求报文,多个参数则应拼接为param11=value11&22=value22&33=value33的形式
 	 * @return 应答Map有两个key,reqFullData--HTTP请求完整报文,respFullData--HTTP响应完整报文
 	 */
-	public static Map<String, String> postBySocket(String reqURL, String reqData){
-		Map<String, String> respMap = new HashMap<String, String>();
-		OutputStream out = null; //写
-		InputStream in = null;   //读
-		Socket socket = null;    //客户机
+	private static Map<String, String> postBySocket(String reqURL, String reqData){
+		Map<String, String> respMap = new HashMap<>();
+		OutputStream out;     //写
+		InputStream in;       //读
+		Socket socket = null; //客户机
 		String respCharset = DEFAULT_CHARSET;
 		String respFullData = "";
 		StringBuilder reqFullData = new StringBuilder();
@@ -786,7 +794,7 @@ public final class HttpUtil {
 			//查询ByteArrayOutputStream.close()的源码会发现,它没有做任何事情,所以其close()与否是无所谓的
 			ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
 			byte[] buffer = new byte[512];
-			int len = -1;
+			int len;
 			while((len=in.read(buffer)) != -1){
 				//将读取到的字节写到ByteArrayOutputStream中
 				//所以最终ByteArrayOutputStream的字节数应该等于HTTP响应报文的整体长度,而大于HTTP响应正文的长度
@@ -808,7 +816,7 @@ public final class HttpUtil {
 				if(from>0 && to==0 && respBuffer[i]==13 && respBuffer[i+1]==10){
 					//一定要加to==0限制,因为可能存在Content-Type后面还有其它的头信息
 					to = i;
-					//既然得到了你想得到的,那就不要再循环啦,徒做无用功而已
+					//既然得到了你想得到的,那就不要再循环啦,徒做无用功
 					break;
 				}
 			}
@@ -857,10 +865,10 @@ public final class HttpUtil {
 	 * @param reqData 待发送报文的中文字符串形式
 	 * @return 应答Map有两个key,localBindPort--本地绑定的端口,respData--应答报文
 	 */
-	public static Map<String, String> tcp(String ip, int port, String reqData){
-		Map<String, String> respMap = new HashMap<String, String>();
-		OutputStream out = null;      //写
-		InputStream in = null;        //读
+	private static Map<String, String> tcp(String ip, int port, String reqData){
+		Map<String, String> respMap = new HashMap<>();
+		OutputStream out;             //写
+		InputStream in;               //读
 		String localBindPort = null;  //本地绑定的端口(java socket, client, /127.0.0.1:50804 => /127.0.0.1:9901)
 		String respData = "";         //响应报文
 		Socket socket = new Socket(); //客户机(Socket socket = SSLSocketFactory.getDefault().createSocket())
@@ -881,7 +889,7 @@ public final class HttpUtil {
 			in = socket.getInputStream();
 			ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
 			byte[] buffer = new byte[512];
-			int len = -1;
+			int len;
 			while((len=in.read(buffer)) != -1){
 				bytesOut.write(buffer, 0, len);
 			}
@@ -901,7 +909,7 @@ public final class HttpUtil {
 			System.err.println("与[" + ip + ":" + port + "]通信遇到异常,堆栈信息如下");
 			e.printStackTrace();
 		} finally {
-			if (null!=socket && socket.isConnected() && !socket.isClosed()) {
+			if (socket.isConnected() && !socket.isClosed()) {
 				try {
 					socket.close();
 				} catch (IOException e) {
