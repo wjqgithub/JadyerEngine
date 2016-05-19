@@ -365,11 +365,7 @@ public final class JadyerUtil {
 			return true;
 		}
 		requestType = request.getHeader("x-requested-with");
-		if(null!=requestType && "XMLHttpRequest".equals(requestType)){
-			return true;
-		}else{
-			return false;
-		}
+		return null!=requestType && "XMLHttpRequest".equals(requestType);
 	}
 
 
@@ -454,7 +450,7 @@ public final class JadyerUtil {
 		try {
 			return new String(data, charset);
 		} catch (UnsupportedEncodingException e) {
-			LogUtil.getLogger().error("将byte数组[" + data + "]转为String时发生异常:系统不支持该字符集[" + charset + "]");
+			LogUtil.getLogger().error("将byte数组[" + Arrays.toString(data) + "]转为String时发生异常:系统不支持该字符集[" + charset + "]");
 			return new String(data);
 		}
 	}
@@ -971,7 +967,7 @@ public final class JadyerUtil {
 	 */
 	public static String extractHttpServletRequestHeaderMessage(HttpServletRequest request){
 		StringBuilder sb = new StringBuilder();
-		sb.append(request.getMethod()).append(" ").append(request.getRequestURI() + (null==request.getQueryString()?"":"?"+request.getQueryString())).append(" ").append(request.getProtocol()).append("\n");
+		sb.append(request.getMethod()).append(" ").append(request.getRequestURI()).append(null==request.getQueryString()?"":"?"+request.getQueryString()).append(" ").append(request.getProtocol()).append("\n");
 		String headerName;
 		for(Enumeration<String> obj = request.getHeaderNames(); obj.hasMoreElements();){
 			headerName = obj.nextElement();
@@ -998,7 +994,7 @@ public final class JadyerUtil {
 		BufferedReader br = null;
 		try{
 			br = request.getReader();
-			for(String line=null; (line=br.readLine())!=null;){
+			for(String line; (line=br.readLine())!=null;){
 				sb.append(line).append("\n");
 			}
 		}catch(IOException e){
@@ -1057,7 +1053,7 @@ public final class JadyerUtil {
 			return;
 		}
 		//只统计*.java;*.xml;*.properties;*.jsp;*.htm;*.html六种文件格式
-		List<String> allowFileTypeList = new ArrayList<String>();
+		List<String> allowFileTypeList = new ArrayList<>();
 		allowFileTypeList.add("java");
 		allowFileTypeList.add("xml");
 		allowFileTypeList.add("properties");
@@ -1075,46 +1071,54 @@ public final class JadyerUtil {
 		int countsCode = 0;     //实际代码的行数
 		int countsComment = 0;  //注释的行数
 		int countsBlank = 0;    //空行的行数
-		String content = null;  //按行读取到的内容
+		String content;         //按行读取到的内容
 		boolean isReadInComments = false;            //用于标记是否已读到注释行中
 		int multiCommentSuffixIndex = 0;             //用于记录已读取到的多行标记的起始字符的下标
 		String[] multiCommentPrefix = new String[1]; //多行注释的起始字符
 		String[] multiCommentSuffix = new String[1]; //多行注释的结尾字符
-		String singleCommentPrefix = null;           //单行注释的起始字符
-		if(codeFileSuffix.equals("java")){
-			multiCommentPrefix[0] = "/*";
-			multiCommentSuffix[0] = "*/";
-			singleCommentPrefix = "//";
-		}else if(codeFileSuffix.equals("xml")){
-			multiCommentPrefix[0] = "<!--";
-			multiCommentSuffix[0] = "-->";
-			singleCommentPrefix = "http://blog.csdn.net/jadyer";
-		}else if(codeFileSuffix.equals("properties")){
-			multiCommentPrefix[0] = "http://blog.csdn.net/jadyer";
-			multiCommentSuffix[0] = "http://blog.csdn.net/jadyer";
-			singleCommentPrefix = "#";
-		}else if(codeFileSuffix.equals("jsp")){
-			multiCommentPrefix = new String[3]; //注意多行标记的起始和结尾字符的下标,应该是一一对应关系
-			multiCommentSuffix = new String[3]; //如此以便于下面判断已读取的起始字符所对应的结尾字符的下标,即上面定义的multiCommentSuffixIndex参数
-			multiCommentPrefix[0] = "<!--";     //匹配JSP文件中的多行注释
-			multiCommentSuffix[0] = "-->";      //实际处理时应注意<style type="text/css"><!--css code//--></style>以及<script type="text/javascript"><!--js code//--></script>
-			multiCommentPrefix[1] = "/*";       //匹配JSP文件中java或js代码的单行或多行注释,以及css代码的单行注释
-			multiCommentSuffix[1] = "*/";
-			multiCommentPrefix[2] = "<%--";     //匹配JSP文件中的多行注释
-			multiCommentSuffix[2] = "--%>";
-			singleCommentPrefix = "//";         //匹配JSP文件中java或js代码的单行注释
-		}else if(codeFileSuffix.equals("htm") || codeFileSuffix.equals("html")){
-			multiCommentPrefix = new String[2];
-			multiCommentSuffix = new String[2];
-			multiCommentPrefix[0] = "<!--";
-			multiCommentSuffix[0] = "-->";
-			multiCommentPrefix[1] = "/*";
-			multiCommentSuffix[1] = "*/";
-			singleCommentPrefix = "//";
-		}else{
-			multiCommentPrefix[0] = "http://blog.csdn.net/jadyer";
-			multiCommentSuffix[0] = "http://blog.csdn.net/jadyer";
-			singleCommentPrefix = "http://blog.csdn.net/jadyer";
+		String singleCommentPrefix;                  //单行注释的起始字符
+		switch (codeFileSuffix) {
+			case "java":
+				multiCommentPrefix[0] = "/*";
+				multiCommentSuffix[0] = "*/";
+				singleCommentPrefix = "//";
+				break;
+			case "xml":
+				multiCommentPrefix[0] = "<!--";
+				multiCommentSuffix[0] = "-->";
+				singleCommentPrefix = "http://blog.csdn.net/jadyer";
+				break;
+			case "properties":
+				multiCommentPrefix[0] = "http://blog.csdn.net/jadyer";
+				multiCommentSuffix[0] = "http://blog.csdn.net/jadyer";
+				singleCommentPrefix = "#";
+				break;
+			case "jsp":
+				multiCommentPrefix = new String[3]; //注意多行标记的起始和结尾字符的下标,应该是一一对应关系
+				multiCommentSuffix = new String[3]; //如此以便于下面判断已读取的起始字符所对应的结尾字符的下标,即上面定义的multiCommentSuffixIndex参数
+				multiCommentPrefix[0] = "<!--";     //匹配JSP文件中的多行注释
+				multiCommentSuffix[0] = "-->";      //实际处理时应注意<style type="text/css"><!--css code//--></style>以及<script type="text/javascript"><!--js code//--></script>
+				multiCommentPrefix[1] = "/*";       //匹配JSP文件中java或js代码的单行或多行注释,以及css代码的单行注释
+				multiCommentSuffix[1] = "*/";
+				multiCommentPrefix[2] = "<%--";     //匹配JSP文件中的多行注释
+				multiCommentSuffix[2] = "--%>";
+				singleCommentPrefix = "//";         //匹配JSP文件中java或js代码的单行注释
+				break;
+			case "htm":
+			case "html":
+				multiCommentPrefix = new String[2];
+				multiCommentSuffix = new String[2];
+				multiCommentPrefix[0] = "<!--";
+				multiCommentSuffix[0] = "-->";
+				multiCommentPrefix[1] = "/*";
+				multiCommentSuffix[1] = "*/";
+				singleCommentPrefix = "//";
+				break;
+			default:
+				multiCommentPrefix[0] = "http://blog.csdn.net/jadyer";
+				multiCommentSuffix[0] = "http://blog.csdn.net/jadyer";
+				singleCommentPrefix = "http://blog.csdn.net/jadyer";
+				break;
 		}
 		/**
 		 * 开始统计
