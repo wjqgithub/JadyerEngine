@@ -68,7 +68,8 @@ import java.util.Map;
 
 /**
  * 玄玉的开发工具类
- * @version v3.8
+ * @version v3.9
+ * @version v3.9-->修正打印入参为java.util.Map时可能引发的NullPointerException
  * @version v3.8-->修正部分细节并增加<code>getDetailDate(dateStr)</code>方法
  * @version v3.7-->add method of <code>escapeEmoji()</code> for escape Emoji to *
  * @history v3.6-->add method of <code>bytesToHex()</code> for convert byte to hex
@@ -93,7 +94,7 @@ import java.util.Map;
  * @history v1.3-->修改<code>getSysJournalNo()</code>实现细节为<code>java.util.UUID.randomUUID()</code>
  * @history v1.2-->新增<code>getString()</code>字节数组转为字符串方法
  * @history v1.1-->新增<code>getHexSign()</code>通过指定算法签名字符串方法
- * @update 2015-6-16 下午8:12:35
+ * @update 2016-5-28 18:42:00
  * @create Dec 22, 2012 7:00:47 PM
  * @author 玄玉<http://blog.csdn.net/jadyer>
  */
@@ -133,6 +134,9 @@ public final class JadyerUtil {
 	 * @return String key11=value11 \n key22=value22 \n key33=value33 \n......
 	 */
 	public static String buildStringFromMap(Map<String, String> map){
+		if(null==map || map.isEmpty()){
+			return "";
+		}
 		StringBuilder sb = new StringBuilder();
 		sb.append(map.getClass().getName()).append("@").append(map.hashCode()).append("[");
 		for(Map.Entry<String,String> entry : map.entrySet()){
@@ -150,6 +154,9 @@ public final class JadyerUtil {
 	 * @return String key11=value11 \n key22=value22 \n key33=value33 \n......
 	 */
 	public static String buildStringFromMapWithStringArray(Map<String, String[]> map){
+		if(null==map || map.isEmpty()){
+			return "";
+		}
 		StringBuilder sb = new StringBuilder();
 		sb.append(map.getClass().getName()).append("@").append(map.hashCode()).append("[");
 		for(Map.Entry<String,String[]> entry : map.entrySet()){
@@ -167,6 +174,9 @@ public final class JadyerUtil {
 	 * @return String key11=value11 \n key22=value22 \n key33=value33 \n......
 	 */
 	public static String buildStringFromMapWithByteArray(Map<String, byte[]> map){
+		if(null==map || map.isEmpty()){
+			return "";
+		}
 		StringBuilder sb = new StringBuilder();
 		sb.append(map.getClass().getName()).append("@").append(map.hashCode()).append("[");
 		for(Map.Entry<String,byte[]> entry : map.entrySet()){
@@ -184,6 +194,9 @@ public final class JadyerUtil {
 	 * @return String key11=value11 \n key22=value22 \n key33=value33 \n......
 	 */
 	public static String buildStringFromObjectWithByte(Object obj){
+		if(null == obj){
+			return "";
+		}
 		//局部的StringBuffer一律StringBuilder之
 		StringBuilder sb = new StringBuilder();
 		sb.append(obj.getClass().getName()).append("@").append(obj.hashCode()).append("[");
@@ -231,6 +244,9 @@ public final class JadyerUtil {
 	 * @return 格式化后的十六进制字符串
 	 */
 	public static String buildHexStringWithASCII(byte[] data, int offset, int length){
+		if(isEmpty(data)){
+			return "";
+		}
 		int end = offset + length;
 		StringBuilder sb = new StringBuilder();
 		StringBuilder sb2 = new StringBuilder();
@@ -285,6 +301,9 @@ public final class JadyerUtil {
 	 * @see 使用说明详见<code>formatToHexStringWithASCII(byte[], int, int)</code>方法
 	 */
 	public static String buildHexStringWithASCIIForHex(byte[] hexData, int offset, int length){
+		if(isEmpty(hexData)){
+			return "";
+		}
 		byte[] data = new byte[hexData.length];
 		for (int i = 0; i < data.length; i++) {
 			//获取16进制数的ASCII值,比如16进制的41对应ASCII的65
