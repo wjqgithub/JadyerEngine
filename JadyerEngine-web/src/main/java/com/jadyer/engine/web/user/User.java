@@ -1,15 +1,16 @@
 package com.jadyer.engine.web.user;
 
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.validator.constraints.NotBlank;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
-
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.validator.constraints.NotBlank;
 
 @Entity
 @DynamicInsert
@@ -23,6 +24,7 @@ public class User {
 	
 	@NotBlank
 	@Size(max=10)
+	@Pattern(regexp="^[\\u4e00-\\u9fa5]+(·[\\u4e00-\\u9fa5]+)*$", message="不合法的中文姓名")
 	private String username;
 	
 	@Size(min=6, max=16)
