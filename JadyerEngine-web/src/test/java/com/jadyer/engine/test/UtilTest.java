@@ -11,6 +11,7 @@ import com.jadyer.engine.common.util.tmp.poi.ExcelUtil;
 import com.jadyer.engine.common.util.tmp.poi.annotation.ExcelHeader;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.hibernate.validator.constraints.NotBlank;
 import org.junit.Assert;
@@ -242,9 +243,30 @@ public class UtilTest {
 	}
 
 
+	/**
+	 * 日期20160513转换2016-05-13测试
+	 */
 	@Test
 	public void jadyerUtilGetDetailDateTest(){
 		Assert.assertEquals("2016-05-13", JadyerUtil.getDetailDate("20160513"));
+	}
+
+
+	/**
+	 * 通过反射实现的属性拷贝方法测试
+	 */
+	@Test
+	public void jadyerUtilBeanCopyPropertiesTest(){
+		UserDetail user11 = new UserDetail();
+		UserDetail user22 = new UserDetail();
+		user11.setId(12);
+		user11.setName("我是玄玉");
+		user11.setSex("male");
+		long startTime = System.currentTimeMillis();
+		for(int i=0; i<10000000; i++){
+			JadyerUtil.beanCopyProperties(user11, user22);
+		}
+		System.out.println("耗时[" + (System.currentTimeMillis()-startTime) +"]ms转换完毕，得到" + ReflectionToStringBuilder.toString(user22));
 	}
 
 
@@ -336,7 +358,7 @@ public class UtilTest {
 		public int getId() {
 			return id;
 		}
-		void setId(int id) {
+		public void setId(int id) {
 			this.id = id;
 		}
 		public String getName() {
@@ -346,7 +368,7 @@ public class UtilTest {
 			this.name = name;
 		}
 	}
-	private class UserDetail extends User{
+	public class UserDetail extends User{
 		@NotBlank
 		@Pattern(regexp="^M|F$", message="性别只能传M或F")
 		private String sex;

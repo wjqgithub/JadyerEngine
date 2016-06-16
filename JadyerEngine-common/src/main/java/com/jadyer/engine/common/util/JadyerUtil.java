@@ -51,6 +51,8 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -68,7 +70,8 @@ import java.util.Map;
 
 /**
  * 玄玉的开发工具类
- * @version v3.9
+ * @version v3.10
+ * @version v3.10-->增加通过反射实现的JavaBean之间属性拷贝的方法beanCopyProperties()
  * @version v3.9-->修正打印入参为java.util.Map时可能引发的NullPointerException
  * @version v3.8-->修正部分细节并增加<code>getDetailDate(dateStr)</code>方法
  * @version v3.7-->add method of <code>escapeEmoji()</code> for escape Emoji to *
@@ -94,7 +97,7 @@ import java.util.Map;
  * @history v1.3-->修改<code>getSysJournalNo()</code>实现细节为<code>java.util.UUID.randomUUID()</code>
  * @history v1.2-->新增<code>getString()</code>字节数组转为字符串方法
  * @history v1.1-->新增<code>getHexSign()</code>通过指定算法签名字符串方法
- * @update 2016-5-28 18:42:00
+ * @update 2016/6/16 16:35
  * @create Dec 22, 2012 7:00:47 PM
  * @author 玄玉<http://blog.csdn.net/jadyer>
  */
@@ -413,6 +416,63 @@ public final class JadyerUtil {
 			return bean;
 		}catch(Exception e){
 			throw new RuntimeException(e);
+		}
+	}
+
+
+	/**
+	 * 采用反射实现的JavaBean属性拷贝
+	 * <ul>
+	 *     <li>实测拷贝效率由低到高依次为（最快的目前是cglib，也是推荐采用的）</li>
+	 *     <li>net.sf.cglib.beans.BeanCopier.copy()</li>
+	 *     <li>org.springframework.beans.BeanUtils.copyProperties()</li>
+	 *     <li>com.jadyer.engine.common.util.JadyerUtil.beanCopyProperties()</li>
+	 *     <li>org.apache.commons.beanutils.BeanUtils.copyProperties()</li>
+	 * </ul>
+	 * <p>
+	 *     曾试过优化一下BeanCopier，把这个对象放到全局的ConcurrentHashMap<String, BeanCopier>里面<br>
+	 *     放进去的beanCopier对象就是BeanCopier.create(source.getClass(), target.getClass(), false)<br>
+	 *     意味着只要是从相同的source拷贝属性给target，就不用每次create()，而是直接从ConcurrentHashMap中取<br>
+	 *     不过测试发现，放到ConcurrentHashMap之后的效率反倒不如每次都BeanCopier.create()，以后有时间再研究吧
+	 * </p>
+	 * <p>
+	 *     另外，这里自己写的反射获取Setter有点复杂了好像，可以参考上面的requestToBean()方法<br>
+	 *     以后真正用的时候再改，今天没心情......
+	 * </p>
+	 * @create 2016/6/16 16:35
+     */
+	public static <T, E> void beanCopyProperties(T source, E target){
+		//采用Cglib实现
+		//net.sf.cglib.beans.BeanCopier beanCopier = BeanCopier.create(source.getClass(), target.getClass(), false);
+		//beanCopier.copy(source, target, null);
+		//采用Spring实现
+		//org.springframework.beans.BeanUtils.copyProperties(source, target);
+		//采用反射实现
+		Method[] sourceMethods = source.getClass().getDeclaredMethods();
+		Method[] targetMethods = target.getClass().getDeclaredMethods();
+		for(Method sourceMethod : sourceMethods){
+			if(sourceMethod.getName().startsWith("get") || sourceMethod.getName().startsWith("is")){
+				//得到源对象的Setter
+				String sourceFieldName;
+				if(sourceMethod.getName().startsWith("get")){
+					sourceFieldName = "set" + sourceMethod.getName().substring(3);
+				}else{
+					sourceFieldName = "set" + sourceMethod.getName().substring(2);
+				}
+				for(Method targetMethod : targetMethods){
+					if(targetMethod.getName().equals(sourceFieldName)){
+						//参数类型和返回类型判断
+						if(sourceMethod.getReturnType().isAssignableFrom(targetMethod.getParameterTypes()[0])){
+							try {
+								targetMethod.invoke(target, sourceMethod.invoke(source));
+								break;
+							} catch (IllegalAccessException | InvocationTargetException e) {
+								throw new RuntimeException("属性拷贝失败", e);
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -964,7 +1024,7 @@ public final class JadyerUtil {
 	 */
 	public static String extractStackTrace(Throwable cause){
 		//ByteArrayOutputStream byteArrayOut = new ByteArrayOutputStream();
-		//e.printStackTrace(new PrintStream(byteArrayOut));
+		//cause.printStackTrace(new PrintStream(byteArrayOut));
 		//return byteArrayOut.toString();
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
