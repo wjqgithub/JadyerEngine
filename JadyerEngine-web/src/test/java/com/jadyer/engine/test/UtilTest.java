@@ -62,7 +62,10 @@ public class UtilTest {
 			try{
 				str = str + "11";
 				System.out.println("11执行了");
+				//throw new IllegalArgumentException("非法参数");
 				return str;
+			}catch(Exception e){
+				throw new RuntimeException("测试ReturnFinally时发生异常-->[" + e.getMessage() + "]");
 			}finally{
 				str = str + "22";
 				System.out.println("22执行了");
