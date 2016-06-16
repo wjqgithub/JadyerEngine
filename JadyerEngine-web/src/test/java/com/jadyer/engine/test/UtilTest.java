@@ -47,10 +47,7 @@ public class UtilTest {
 
 	/**
 	 * return和try{}finally{}的先后执行测试
-	 * @see 控制台输出如下
-	 * @see 11执行了
-	 * @see 22执行了
-	 * @see aa11
+	 * 控制台输出：11执行了---22执行了---aa11
 	 * @create 2015-6-7 下午1:15:34
 	 * @author 玄玉<http://blog.csdn.net/jadyer>
 	 */
@@ -58,8 +55,9 @@ public class UtilTest {
 	public void finallyReturnTest(){
 		System.out.println(FinallyReturn.print());
 	}
-	static class FinallyReturn{
-		public static String print(){
+	private static class FinallyReturn{
+		@SuppressWarnings("UnusedAssignment")
+		static String print(){
 			String str = "aa";
 			try{
 				str = str + "11";
@@ -68,6 +66,7 @@ public class UtilTest {
 			}finally{
 				str = str + "22";
 				System.out.println("22执行了");
+				//return str;
 			}
 		}
 	}
@@ -96,7 +95,7 @@ public class UtilTest {
 		String filename = "菱纱.jpg";
 		InputStream is = new FileInputStream("E:\\Wallpaper\\菱纱.jpg");
 		String fileBodyName = "fileData";
-		Map<String, String> params = new HashMap<String, String>();
+		Map<String, String> params = new HashMap<>();
 		params.put("serialNo", UUID.randomUUID().toString().replaceAll("-", ""));
 		String respData = HttpUtil.postWithUpload(reqURL, filename, is, fileBodyName, params);
 		System.out.println("文件上传完毕,收到应答报文" + respData);
@@ -112,7 +111,7 @@ public class UtilTest {
 	@Test
 	public void httpUtilForDownloadTest() throws IOException{
 		String reqURL = "http://127.0.0.1:8080/engine/file/download";
-		Map<String, String> params = new HashMap<String, String>();
+		Map<String, String> params = new HashMap<>();
 		params.put("sysCode", "33");
 		Map<String, String> resultMap = HttpUtil.postWithDownload(reqURL, params);
 		if("yes".equals(resultMap.get("isSuccess"))){
@@ -253,7 +252,7 @@ public class UtilTest {
 	 */
 	@Test
 	public void excelUtilTest() throws IllegalArgumentException, IllegalAccessException, IOException{
-		List<Object> applyList = new ArrayList<Object>();
+		List<Object> applyList = new ArrayList<>();
 		Apply apply = new Apply();
 		apply.setPersonName("神灯");
 		apply.setPersonIdent("420111196808195876");
@@ -270,7 +269,7 @@ public class UtilTest {
 		ep.setIgnorHeader(false);
 		new ExcelUtil("C:\\Users\\Jadyer\\Desktop\\test.xls", ep).saveListToExcel(null, applyList);
 	}
-	class Apply{
+	private class Apply{
 		@ExcelHeader(column=1,title="姓名")
 		private String personName;
 		@ExcelHeader(column=2,title="身份证号")
@@ -280,19 +279,19 @@ public class UtilTest {
 		public String getPersonName() {
 			return personName;
 		}
-		public void setPersonName(String personName) {
+		void setPersonName(String personName) {
 			this.personName = personName;
 		}
 		public String getPersonIdent() {
 			return personIdent;
 		}
-		public void setPersonIdent(String personIdent) {
+		void setPersonIdent(String personIdent) {
 			this.personIdent = personIdent;
 		}
 		public String getPersonMobile() {
 			return personMobile;
 		}
-		public void setPersonMobile(String personMobile) {
+		void setPersonMobile(String personMobile) {
 			this.personMobile = personMobile;
 		}
 	}
@@ -334,7 +333,7 @@ public class UtilTest {
 		public int getId() {
 			return id;
 		}
-		public void setId(int id) {
+		void setId(int id) {
 			this.id = id;
 		}
 		public String getName() {
@@ -344,7 +343,7 @@ public class UtilTest {
 			this.name = name;
 		}
 	}
-	class UserDetail extends User{
+	private class UserDetail extends User{
 		@NotBlank
 		@Pattern(regexp="^M|F$", message="性别只能传M或F")
 		private String sex;
