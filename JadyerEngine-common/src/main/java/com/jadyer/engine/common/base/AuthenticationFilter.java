@@ -1,8 +1,7 @@
 package com.jadyer.engine.common.base;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import com.jadyer.engine.common.constant.Constants;
+import com.jadyer.engine.common.util.ConfigUtil;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -12,9 +11,9 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.jadyer.engine.common.constant.Constants;
-import com.jadyer.engine.common.util.ConfigUtil;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 权限验证
@@ -94,7 +93,7 @@ public class AuthenticationFilter implements Filter {
 				disallowAnonymousVisit = false;
 				break;
 			}
-			if(anonymousResource.endsWith("**") && request.getServletPath().startsWith(anonymousResource.replace("**", ""))){
+			if(anonymousResource.endsWith("/**") && request.getServletPath().startsWith(anonymousResource.replace("/**", ""))){
 				disallowAnonymousVisit = false;
 				break;
 			}
