@@ -5,10 +5,12 @@ import com.jadyer.engine.common.util.FtpUtil;
 import com.jadyer.engine.common.util.HttpUtil;
 import com.jadyer.engine.common.util.ImageUtil;
 import com.jadyer.engine.common.util.JadyerUtil;
+import com.jadyer.engine.common.util.PasswordUtil;
 import com.jadyer.engine.common.util.ValidatorUtil;
 import com.jadyer.engine.common.util.tmp.poi.ExcelProperty;
 import com.jadyer.engine.common.util.tmp.poi.ExcelUtil;
 import com.jadyer.engine.common.util.tmp.poi.annotation.ExcelHeader;
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -24,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -378,5 +381,18 @@ public class UtilTest {
 		public void setSex(String sex) {
 			this.sex = sex;
 		}
+	}
+
+
+	@Test
+	public void passwordUtilTest() throws DecoderException, UnsupportedEncodingException {
+		String password = "xuanyu";
+		String passwordHash = PasswordUtil.createHash(password, "jadyer");
+		System.out.println("password hash = [" + passwordHash + "]");
+		System.out.println("password verify = [" + PasswordUtil.verifyPassword(password, "jadyer", passwordHash) +"]");
+		System.out.println("--------------------------------------");
+		passwordHash = PasswordUtil.createHash(password);
+		System.out.println("new password hash = [" + passwordHash + "]");
+		System.out.println("password verify = [" + PasswordUtil.verifyPassword(password, passwordHash) +"]");
 	}
 }

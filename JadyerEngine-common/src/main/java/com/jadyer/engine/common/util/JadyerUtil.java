@@ -70,11 +70,12 @@ import java.util.Map;
 
 /**
  * 玄玉的开发工具类
- * @version v3.10
- * @version v3.10-->增加通过反射实现的JavaBean之间属性拷贝的方法beanCopyProperties()
- * @version v3.9-->修正打印入参为java.util.Map时可能引发的NullPointerException
- * @version v3.8-->修正部分细节并增加<code>getDetailDate(dateStr)</code>方法
- * @version v3.7-->add method of <code>escapeEmoji()</code> for escape Emoji to *
+ * @version v3.11
+ * @history v3.11-->增加十六进制字符串转为byte[]的方法hexToBytes()
+ * @history v3.10-->增加通过反射实现的JavaBean之间属性拷贝的方法beanCopyProperties()
+ * @history v3.9-->修正打印入参为java.util.Map时可能引发的NullPointerException
+ * @history v3.8-->修正部分细节并增加<code>getDetailDate(dateStr)</code>方法
+ * @history v3.7-->add method of <code>escapeEmoji()</code> for escape Emoji to *
  * @history v3.6-->add method of <code>bytesToHex()</code> for convert byte to hex
  * @history v3.5-->增加requestToBean()用于将HttpServletRequest参数值转为JavaBean的方法
  * @history v3.4-->增加extractHttpServletRequestMessage用于提取HTTP请求完整报文的两个方法
@@ -246,7 +247,7 @@ public final class JadyerUtil {
 	 * @param length 格式长度,其不得大于数组长度,否则抛出java.lang.ArrayIndexOutOfBoundsException
 	 * @return 格式化后的十六进制字符串
 	 */
-	public static String buildHexStringWithASCII(byte[] data, int offset, int length){
+	private static String buildHexStringWithASCII(byte[] data, int offset, int length){
 		if(isEmpty(data)){
 			return "";
 		}
@@ -318,13 +319,35 @@ public final class JadyerUtil {
 
 	/**
 	 * convert byte to hex
+	 * <p>等效于org.apache.commons.codec.binary.Hex.encodeHexString(in, true)</p>
 	 */
-	public static String bytesToHex(byte[] in){
+	public static String bytesToHex(byte[] in, boolean toLowerCase){
+		//String hex = new BigInteger(1, in).toString(16);
+		//int paddingLength = (in.length * 2) - hex.length();
+		//if(paddingLength > 0){
+		//	return String.format("%0" + paddingLength + "d", 0) + hex;
+		//}else{
+		//	return hex;
+		//}
+		//上面注释的是另一种经过验证ok的写法
 		final StringBuilder sb = new StringBuilder();
 		for(byte b : in){
-			sb.append(String.format("%02X", b));
+			sb.append(String.format(toLowerCase ? "%02x" : "%02X", b));
 		}
 		return sb.toString();
+	}
+
+
+	/**
+	 * convert hex to byte
+	 * <p>等效于org.apache.commons.codec.binary.Hex.decodeHex(hex.toCharArray())</p>
+	 */
+	public static byte[] hexToBytes(String hex){
+		byte[] binary = new byte[hex.length() / 2];
+		for(int i=0; i<binary.length; i++){
+			binary[i] = (byte)Integer.parseInt(hex.substring(2*i, 2*i+2), 16);
+		}
+		return binary;
 	}
 
 
@@ -1027,12 +1050,9 @@ public final class JadyerUtil {
 		//cause.printStackTrace(new PrintStream(byteArrayOut));
 		//return byteArrayOut.toString();
 		StringWriter sw = new StringWriter();
-		PrintWriter pw = new PrintWriter(sw);
-		try{
+		try (PrintWriter pw = new PrintWriter(sw)) {
 			cause.printStackTrace(pw);
 			return sw.toString();
-		}finally{
-			pw.close();
 		}
 	}
 
