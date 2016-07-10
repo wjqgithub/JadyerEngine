@@ -120,6 +120,36 @@ import java.util.Map;
  * @see    http://qzone-music.qq.com/fcg-bin/fcg_music_fav_getinfo.fcg?dirinfo=0&dirid=1&uin=QQ号&p=0.519638272547262&g_tk=1284234856
  * @see    http://v5.pc.duomi.com/search-ajaxsearch-searchall?kw=关键字&pi=页码&pz=每页音乐数
  * @see -----------------------------------------------------------------------------------------------------------
+ * @see 可以调研下okhttp和jodd-http，两者都比较小
+ * @see okhttp一共俩包加起来411kb，jodd-http一共仨包加起来453kb，但光一个httpclient-4.5.2.jar都是719kb
+ * @see 关键httpclient每次升级，哪怕是小版本升级，API都要跟着改，升一次级就跟学一门新语言似的
+ * @see 下面是httpclient-4.4.x版本的一个写法
+ * @see import org.apache.http.client.HttpClient;
+ * @see import org.apache.http.config.Registry;
+ * @see import org.apache.http.config.RegistryBuilder;
+ * @see import org.apache.http.conn.socket.ConnectionSocketFactory;
+ * @see import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+ * @see import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+ * @see import org.apache.http.impl.client.HttpClientBuilder;
+ * @see import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+ * @see public class HttpClientDemo {
+ * @see     private int maxTotalConn;    //最大连接数
+ * @see     private int maxConnPerRoute; //单URL并发连接数
+ * @see     private int connectTimeout;  //建立链接超时，单位：毫秒
+ * @see     private int readTimeout;     //数据读取超时，单位：毫秒
+ * @see     private HttpClient createHttpClient(){
+ * @see         //HttpClient httpClient = HttpClientBuilder.create().setMaxConnTotal(maxTotalConn).setMaxConnPerRoute(maxConnPerRoute).build();
+ * @see         Registry<ConnectionSocketFactory> schemeRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+ * @see             .register("http", PlainConnectionSocketFactory.getSocketFactory())
+ * @see             .register("https", SSLConnectionSocketFactory.getSocketFactory())
+ * @see             .build();
+ * @see         PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(schemeRegistry);
+ * @see         connectionManager.setMaxTotal(maxTotalConn);
+ * @see         connectionManager.setDefaultMaxPerRoute(maxConnPerRoute);
+ * @see         return HttpClientBuilder.create().setConnectionManager(connectionManager).build();
+ * @see     }
+ * @see }
+ * @see -----------------------------------------------------------------------------------------------------------
  * @version v2.6
  * @history v2.6-->修复部分细节，增加入参出参的日志打印
  * @history v2.5-->修复<code>postWithUpload()</code>方法的<code>Map<String, String> params</code>参数传入null时无法上传文件的BUG
