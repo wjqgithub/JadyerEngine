@@ -69,6 +69,7 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -89,7 +90,8 @@ import java.util.Map;
 
 /**
  * 玄玉的开发工具类
- * @version v3.11
+ * @version v3.12
+ * @history v3.12-->增加获取应用运行进程的PID的方法getPID()
  * @history v3.11-->增加十六进制字符串转为byte[]的方法hexToBytes()
  * @history v3.10-->增加通过反射实现的JavaBean之间属性拷贝的方法beanCopyProperties()
  * @history v3.9-->修正打印入参为java.util.Map时可能引发的NullPointerException
@@ -1318,5 +1320,14 @@ public final class JadyerUtil {
 		resultMap.put("code", (resultMap.get("code")==null ? 0 : resultMap.get("code")) + countsCode);
 		resultMap.put("comment", (resultMap.get("comment")==null ? 0 : resultMap.get("comment")) + countsComment);
 		resultMap.put("blank", (resultMap.get("blank")==null ? 0 : resultMap.get("blank")) + countsBlank);
+	}
+
+
+	/**
+	 * 获取应用运行进程的PID
+     */
+	public static String getPID(){
+		String jvmName = ManagementFactory.getRuntimeMXBean().getName();
+		return jvmName.split("@")[0];
 	}
 }
