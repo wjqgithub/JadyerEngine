@@ -1,6 +1,7 @@
 package com.jadyer.engine.quartz.model;
 
-import java.util.Date;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -11,9 +12,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
-
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
+import java.util.Date;
 
 /**
  * 定时任务信息表
@@ -85,12 +84,12 @@ public class ScheduleTask {
 	 * @see 3.为字段指定默认值可直接写为Date createTime = new Date(),其通常用于Save()的生成insert语句
 	 * @see   即前台不传createTime时,Controller接收的ScheduleTask对象的createTime会自动赋为这里指定的默认值
 	 */
-	@Column(name="create_time")
+	@Column(name="create_time", updatable=false)
 	@Basic(fetch=FetchType.LAZY)
 	private Date createTime = new Date();
 	
 	/** 修改时间 */
-	@Column(name="update_time")
+	@Column(name="update_time", updatable=false, insertable=false)
 	@Basic(fetch=FetchType.LAZY)
 	private Date updateTime;
 	
